@@ -1,10 +1,11 @@
 # MILKY WAY — บ้านของเราในจักรวาล
 
-## Planet progress — 2 / 8
+## Planet progress — 3 / 8
 
+- `/?view=jupiter`: ดาวพฤหัสบดี — โมเดล Blender ทรงแป้นเล็กน้อย แผนที่แถบเมฆและจุดแดงใหญ่ 4K หมุนและปรับแสงได้
 - `/?view=earth`: โลก — โมเดลจาก Blender, แผนที่พื้นผิว/ไฟเมือง/เมฆ 4K, ไฟเมืองแสดงเฉพาะด้านมืดด้วย shader และชั้นบรรยากาศแยก
 - `/?view=saturn`: ดาวเสาร์ — พื้นผิวเมฆ 4K และวงแหวน 8K
-- ยังไม่สร้างฉากรายละเอียด: ดาวพุธ ดาวศุกร์ ดาวอังคาร ดาวพฤหัสบดี ดาวยูเรนัส ดาวเนปจูน
+- ยังไม่สร้างฉากรายละเอียด: ดาวพุธ ดาวศุกร์ ดาวอังคาร ดาวยูเรนัส ดาวเนปจูน
 
 โหลด GLB เฉพาะดวงที่เลือกผ่านเมนูบนหน้า การนับนี้หมายถึงดาวเคราะห์ในระบบสุริยะ 8 ดวง ไม่รวมดวงอาทิตย์ ดาวเคราะห์แคระ หรือดาวฤกษ์ในกาแลคซี่
 
@@ -59,3 +60,5 @@ npm run preview
 ภาพหลุมดำเป็นการจำลองเชิงภาพ ไม่ใช่ภาพถ่าย Sagittarius A* ภาพดาวและแผนผังเป็นภาพประกอบ ไม่ใช่มาตราส่วนจริง แหล่งข้อมูล NASA, Chandra และ Event Horizon Telescope เชื่อมไว้ในเว็บไซต์
 
 รองรับ reduced motion, เมนูมือถือ, keyboard focus และ native modal dialog หาก WebGL ใช้ไม่ได้จะแสดงภาพพื้นหลังสำรอง
+
+Jupiter: regenerate with `blender --background --python art/create_jupiter.py`. The packed source is `art/jupiter.blend`; `art/jupiter-preview.png` is a Cycles render, not browser QA.

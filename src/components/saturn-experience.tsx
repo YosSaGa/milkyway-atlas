@@ -3,10 +3,16 @@ import { ArrowLeft, ArrowUpRight, Orbit, RotateCcw, Plus, Minus, Pause, Play, In
 import type * as THREE from 'three';
 import '../saturn.css';
 
-export default function SaturnExperience({ planetName = 'saturn' }: { planetName?: 'saturn' | 'earth' }) {
+const planets = {
+  earth: { title: 'EARTH', thai: 'โลก', mesh: 'Earth', numeral: 'III', kicker: 'OUR PALE BLUE HOME', description: 'มหาสมุทร เมฆ และแสงไฟ บนบ้านเพียงดวงเดียวของเรา', infoKicker: 'THE LIVING PLANET', infoTitle: 'ชีวิตบนดาวสีน้ำเงิน', story: 'โลกเป็นดาวเคราะห์ลำดับที่สามจากดวงอาทิตย์ แสงอาทิตย์ส่องสว่างเพียงด้านหนึ่งของโลกในแต่ละขณะ ลองเลือกมุมกลางคืนเพื่อดูแสงจากเมืองบนด้านมืด', credit: 'พื้นผิว เมฆ และไฟเมือง', exposure: 1.05 },
+  jupiter: { title: 'JUPITER', thai: 'ดาวพฤหัสบดี', mesh: 'Jupiter', numeral: 'V', kicker: 'A WORLD OF STORMS', description: 'ริ้วเมฆที่ไหลวน และพายุยักษ์กลางมหาสมุทรก๊าซ', infoKicker: 'THE GREAT RED SPOT', infoTitle: 'พายุบนดาวยักษ์', story: 'ดาวพฤหัสบดีเป็นดาวเคราะห์ลำดับที่ห้าและใหญ่ที่สุดในระบบสุริยะ แถบสีที่เห็นคือชั้นเมฆในบรรยากาศ จุดแดงใหญ่เป็นพายุขนาดมหึมา ดาวดวงนี้ไม่มีพื้นผิวแข็งแบบโลก', credit: 'แผนที่แถบเมฆ', exposure: 1.15 },
+  saturn: { title: 'SATURN', thai: 'ดาวเสาร์', mesh: 'Saturn', numeral: 'VI', kicker: 'THE RINGED WORLD', description: 'ความเงียบงันที่มีวงแหวนโอบล้อม', infoKicker: 'BEYOND THE RINGS', infoTitle: 'โลกแห่งน้ำแข็งและก๊าซ', story: 'ดาวเสาร์เป็นดาวเคราะห์ลำดับที่หกจากดวงอาทิตย์ วงแหวนประกอบด้วยชิ้นส่วนน้ำแข็งและหินจำนวนมาก ไม่ใช่แผ่นแข็งชิ้นเดียว', credit: 'วงแหวน', exposure: 1.35 },
+};
+
+export default function SaturnExperience({ planetName = 'saturn' }: { planetName?: keyof typeof planets }) {
   const isEarth = planetName === 'earth';
-  const title = isEarth ? 'EARTH' : 'SATURN';
-  const thai = isEarth ? 'โลก' : 'ดาวเสาร์';
+  const data = planets[planetName];
+  const { title, thai } = data;
   const host = useRef<HTMLDivElement>(null);
   const actions = useRef<{ reset: () => void; zoom: (factor: number) => void } | null>(null);
   const [auto, setAuto] = useState(false);
@@ -28,7 +34,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       renderer.setPixelRatio(Math.min(devicePixelRatio, narrow ? 1.5 : 2));
       renderer.setClearColor('#020307');
       renderer.toneMapping = T.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = isEarth ? 1.05 : 1.35;
+      renderer.toneMappingExposure = data.exposure;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = T.PCFSoftShadowMap;
       const scene = new T.Scene();
@@ -37,8 +43,8 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       canvas.tabIndex = 0; canvas.setAttribute('aria-label', `${thai}สามมิติ ลากหมุน เลื่อนซูม ปุ่มลูกศรหมุนกล้อง`);
       container.appendChild(canvas);
       const orbit = new OrbitControls(camera, canvas);
-      orbit.enableDamping = true; orbit.enablePan = false; orbit.minDistance = isEarth ? 2.6 : 3.7; orbit.maxDistance = 13; orbit.autoRotateSpeed = .3;
-      const home = isEarth ? new T.Vector3(0, .8, 5.5) : new T.Vector3(0, 2.2, 7.8);
+      orbit.enableDamping = true; orbit.enablePan = false; orbit.minDistance = planetName === 'saturn' ? 3.7 : 2.8; orbit.maxDistance = 13; orbit.autoRotateSpeed = .3;
+      const home = planetName === 'jupiter' ? new T.Vector3(0, .55, 6.2) : isEarth ? new T.Vector3(0, .8, 5.5) : new T.Vector3(0, 2.2, 7.8);
       camera.position.copy(home); orbit.update();
       const sun = new T.DirectionalLight('#fff0d9', 3.6); sun.position.set(-4, 5, 4); sun.castShadow = true;
       const shadowSize = narrow ? 2048 : 4096;
@@ -82,7 +88,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
         if(gone){release(gltf.scene);return;}
         model=gltf.scene;
         model.traverse(obj=>{if(obj instanceof T.Mesh){obj.castShadow=true;obj.receiveShadow=true;const mats=Array.isArray(obj.material)?obj.material:[obj.material];for(const mat of mats){mat.side=T.DoubleSide;if(mat.map)mat.map.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(obj.name==='Rings'){mat.transparent=true;mat.depthWrite=false;mat.shadowSide=T.DoubleSide;obj.customDepthMaterial=new T.MeshDepthMaterial({map:mat.map,alphaTest:.3,depthPacking:T.RGBADepthPacking,side:T.DoubleSide});}}}});
-        const planet = model.getObjectByName(isEarth ? 'Earth' : 'Saturn') as THREE.Mesh | undefined;
+        const planet = model.getObjectByName(data.mesh) as THREE.Mesh | undefined;
         if (isEarth && planet) {
           const original = planet.material as THREE.MeshStandardMaterial;
           if (!original.map || !original.emissiveMap) throw new Error('Earth day/night maps missing');
@@ -130,16 +136,16 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       }catch{if(!gone)setStatus('error');}
     }).catch(()=>{if(!gone)setStatus('error');});
     return()=>{gone=true;dispose();};
-  },[retry, planetName, isEarth, thai]);
+  },[retry, planetName, isEarth, thai, data]);
 
   return <main className={`saturn-experience ${isEarth ? 'earth-experience' : ''}`}>
     <div ref={host} className="saturn-stage"/>
-    <header className="saturn-header"><a href="/" className="saturn-brand"><Orbit size={23}/><span>MILKY WAY <small>OBSERVATORY</small></span></a><a href="/" className="saturn-back"><ArrowLeft size={14}/> กลับสู่ทางช้างเผือก</a><nav className="planet-switch" aria-label="เลือกดาวเคราะห์"><a href="/?view=earth" aria-current={isEarth?'page':undefined}>โลก</a><a href="/?view=saturn" aria-current={!isEarth?'page':undefined}>ดาวเสาร์</a><span>02 / 08</span></nav></header>
-    <div className="saturn-intro"><span className="saturn-kicker">{isEarth?'OUR PALE BLUE HOME':'THE RINGED WORLD'}</span><h1>{title}<span>{thai}</span></h1><p>{isEarth?<>มหาสมุทร เมฆ และแสงไฟ<br/>บนบ้านเพียงดวงเดียวของเรา</>:<>ความเงียบงัน<br/>ที่มีวงแหวนโอบล้อม</>}</p><button onClick={()=>setInfo(!info)} className="saturn-learn" aria-expanded={info}><Info size={15}/> เรื่องราวของ{thai} <ArrowUpRight size={15}/></button></div>
-    <div className="saturn-specimen"><span className="status-dot"/> SOL SYSTEM <span>/</span> {isEarth?'III':'VI'}</div>
+    <header className="saturn-header"><a href="/" className="saturn-brand"><Orbit size={23}/><span>MILKY WAY <small>OBSERVATORY</small></span></a><a href="/" className="saturn-back"><ArrowLeft size={14}/> กลับสู่ทางช้างเผือก</a><nav className="planet-switch" aria-label="เลือกดาวเคราะห์">{Object.entries(planets).map(([key, planet])=><a key={key} href={`/?view=${key}`} aria-current={planetName===key?'page':undefined}>{planet.thai}</a>)}<span>03 / 08</span></nav></header>
+    <div className="saturn-intro"><span className="saturn-kicker">{data.kicker}</span><h1>{title}<span>{thai}</span></h1><p>{data.description}</p><button onClick={()=>setInfo(!info)} className="saturn-learn" aria-expanded={info}><Info size={15}/> เรื่องราวของ{thai} <ArrowUpRight size={15}/></button></div>
+    <div className="saturn-specimen"><span className="status-dot"/> SOL SYSTEM <span>/</span> {data.numeral}</div>
     {status!=='ready'&&<div className="saturn-loading" role="status"><Orbit size={28}/><span>{status==='loading'?'กำลังเปิดโมเดลจาก Blender…':'ไม่สามารถเปิดฉาก WebGL ได้'}</span>{status==='error'&&<button onClick={()=>setRetry(retry+1)}>ลองอีกครั้ง</button>}</div>}
-    {info&&<aside className="saturn-info"><button className="saturn-close" onClick={()=>setInfo(false)} aria-label="ปิดข้อมูล"><X size={18}/></button><span className="saturn-kicker">{isEarth?'THE LIVING PLANET':'BEYOND THE RINGS'}</span><h2>{isEarth?<>ชีวิตบนดาว<br/>สีน้ำเงิน</>:<>โลกแห่งน้ำแข็ง<br/>และก๊าซ</>}</h2><p>{isEarth?'โลกเป็นดาวเคราะห์ลำดับที่สามจากดวงอาทิตย์ แสงอาทิตย์ส่องสว่างเพียงด้านหนึ่งของโลกในแต่ละขณะ ลองเลือกมุมกลางคืนเพื่อดูแสงจากเมืองบนด้านมืด':'ดาวเสาร์เป็นดาวเคราะห์ลำดับที่หกจากดวงอาทิตย์ วงแหวนประกอบด้วยชิ้นส่วนน้ำแข็งและหินจำนวนมาก ไม่ใช่แผ่นแข็งชิ้นเดียว'}</p><p>นี่คือโมเดลเพื่อศึกษางานภาพ พื้นผิวและแสงปรับเพื่อการนำเสนอ ไม่ใช่ภาพสด เมฆหรือเวลาบนโลกในขณะนี้</p><a href={`https://science.nasa.gov/${planetName}/`} target="_blank" rel="noreferrer">สำรวจข้อมูลจาก NASA <ArrowUpRight size={14}/></a></aside>}
+    {info&&<aside className="saturn-info"><button className="saturn-close" onClick={()=>setInfo(false)} aria-label="ปิดข้อมูล"><X size={18}/></button><span className="saturn-kicker">{data.infoKicker}</span><h2>{data.infoTitle}</h2><p>{data.story}</p><p>นี่คือโมเดลเพื่อศึกษางานภาพ พื้นผิวและแสงปรับเพื่อการนำเสนอ ไม่ใช่ภาพสดหรือสภาพอากาศในขณะนี้</p><a href={`https://science.nasa.gov/${planetName}/`} target="_blank" rel="noreferrer">สำรวจข้อมูลจาก NASA <ArrowUpRight size={14}/></a></aside>}
     <footer className="saturn-console"><div className="saturn-caption"><span>DRAG TO ORBIT</span><p>ลากหมุน · เลื่อนซูม · มือถือใช้สองนิ้ว</p></div><div className="saturn-lighting" aria-label="เลือกแสง">{(isEarth?['กลางวัน','กลางคืน','มุมสว่าง']:['แสงอาทิตย์','ย้อนแสง','มุมสว่าง']).map((label,i)=><button key={label} onClick={()=>setLighting(i)} aria-pressed={lighting===i}>{label}</button>)}</div><div className="saturn-actions"><button aria-label="ซูมเข้า" onClick={()=>actions.current?.zoom(.85)} disabled={status!=='ready'}><Plus size={17}/></button><button aria-label="ซูมออก" onClick={()=>actions.current?.zoom(1.18)} disabled={status!=='ready'}><Minus size={17}/></button><button aria-label="กลับมุมเริ่มต้น" onClick={()=>actions.current?.reset()} disabled={status!=='ready'}><RotateCcw size={16}/></button><button aria-label="หมุนอัตโนมัติ" aria-pressed={auto} onClick={()=>setAuto(!auto)} disabled={status!=='ready'}>{auto?<Pause size={16}/>:<Play size={16}/>}</button></div></footer>
-    <span className="saturn-credit">ภาพจำลอง · {isEarth?'พื้นผิว เมฆ และไฟเมือง':'วงแหวน'}: <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noreferrer">Solar System Scope</a> / <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a> · ปรับวัสดุและแสง</span>
+    <span className="saturn-credit">ภาพจำลอง · {data.credit}: <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noreferrer">Solar System Scope</a> / <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a> · ปรับวัสดุและแสง</span>
   </main>;
 }

@@ -18,3 +18,7 @@ Earth day, night and cloud maps by **Solar System Scope / INOVE**, CC BY 4.0, sa
 The original JPG download server returned 403 during this build, so these maps were retrieved from the public asset mirror at https://github.com/ZGdadong/Three.js-3D-Earth/tree/main/images (textures only; no application code copied). The mirrored cloud file size matches the upstream asset. They are resized to 4096 × 2048 for the embedded GLB and combined with custom lighting, day/night masking and a separate cloud sphere. Credit remains with the original texture author. Source inputs live in `art/textures/earth/`.
 
 Clouds and city lights are illustrative composite maps, not live weather, power usage or a real-time solar terminator.
+
+## Jupiter
+
+Cloud map by Solar System Scope / INOVE, CC BY 4.0 (source and license above). Retrieved from https://github.com/Shriisoot/Planets-texture/blob/main/8k_jupiter.jpg (texture only). Despite its filename, this mirror is 4096 × 2048; the site accurately labels it 4K. Embedded unchanged in the GLB; appearance is modified by oblate geometry, orientation, material and lighting. This composite is not live weather. Planet facts: https://science.nasa.gov/jupiter/jupiter-facts/
