@@ -19,14 +19,26 @@ def image(name, pixels):
     return im
 
 # Baked cloud bands: deliberately illustrative, not a spacecraft observation.
-w,h = 2048,1024
+w,h = 4096,2048
 u,v = np.meshgrid(np.linspace(0,2*math.pi,w), np.linspace(0,math.pi,h))
-warp = v + .005*np.sin(u*8+np.sin(v*25)) + .003*np.sin(u*19-v*33)
-bands = .035*np.sin(warp*27) + .022*np.sin(warp*67+1) + .008*np.sin(warp*151) + .004*np.sin(warp*370)
-clouds = .009*np.sin(u*120+np.sin(v*240))*np.sin(v*410+u*20)
-base = np.array([.66,.56,.40])
-rgb = base + (bands+clouds)[...,None]*np.array([1,.9,.7])
-rgb += (.06*np.sin(v)**2)[...,None]
+def noise(nx, ny, seed):
+    rng=np.random.default_rng(seed)
+    grid=rng.random((ny+1,nx+1)).astype(np.float32);grid[:,-1]=grid[:,0]
+    xx=np.linspace(0,nx-.0001,w);yy=np.linspace(0,ny-.0001,h)
+    ix=xx.astype(int);iy=yy.astype(int)
+    fx=xx-ix;fy=yy-iy;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy)
+    a=grid[iy[:,None],ix[None,:]]*(1-fx)+grid[iy[:,None],ix[None,:]+1]*fx
+    b=grid[iy[:,None]+1,ix[None,:]]*(1-fx)+grid[iy[:,None]+1,ix[None,:]+1]*fx
+    return (a*(1-fy[:,None])+b*fy[:,None]-.5).astype(np.float32)
+turbulence=noise(48,96,12)*.55+noise(96,192,24)*.25+noise(192,384,36)*.13+noise(384,768,48)*.07
+warp = v + .007*turbulence + .002*np.sin(u*6+np.sin(v*19))
+rng=np.random.default_rng(7)
+bands=np.zeros_like(v)
+for center,width,amplitude in zip(rng.uniform(0,math.pi,65),rng.uniform(.005,.065,65),rng.uniform(-.075,.055,65)):
+    bands += amplitude*np.exp(-((warp-center)/width)**2)
+base = np.array([.60,.52,.39])
+rgb = base + bands[...,None]*np.array([1,.92,.77])+turbulence[...,None]*.017
+rgb += (.07*np.sin(v)**4)[...,None]*np.array([1,.95,.8])
 pixels = np.concatenate([np.clip(rgb,0,1), np.ones((h,w,1))],axis=2)
 surface = image('saturn-clouds', pixels)
 
@@ -40,17 +52,9 @@ bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
 planet.data.materials.append(mat)
 for p in planet.data.polygons:p.use_smooth=True
 
-# Radial texture on an annular mesh. Cassini division is an actual gap in opacity.
-n=2048
-t=np.linspace(0,1,n); r=1.22+t*(2.32-1.22)
-grain=.76+.13*np.sin(r*193)+.055*np.sin(r*719)+.035*np.sin(r*1703)
-alpha=np.where(r<1.52,.19,np.where(r<1.94,.88,.62))*grain
-alpha[(r>1.94)&(r<2.025)]=.025
-alpha[(r>2.245)&(r<2.257)]=.03
-alpha*=np.clip((r-1.22)*60,0,1)*np.clip((2.32-r)*90,0,1)
-ring_rgb=np.outer(.65+.2*grain,np.array([.78,.70,.56]))
-strip=np.concatenate([ring_rgb,alpha[:,None]],axis=1)[None,:,:]
-ring_image=image('saturn-rings',np.repeat(strip,8,axis=0))
+# Solar System Scope / INOVE, CC BY 4.0; see art/ATTRIBUTION.md.
+ring_image=bpy.data.images.load(os.path.join(ROOT,'art','textures','8k_saturn_ring_alpha.png'))
+ring_image.pack()
 ring_mat=bpy.data.materials.new('Icy rings • radial baked texture');ring_mat.use_nodes=True
 ring_mat.blend_method='BLEND';ring_mat.use_screen_refraction=False
 ring_bs=ring_mat.node_tree.nodes.get('Principled BSDF');ring_bs.inputs['Roughness'].default_value=.9
@@ -78,13 +82,13 @@ for obj in [root,planet,rings]:obj.select_set(True)
 bpy.context.view_layer.objects.active=planet
 bpy.ops.export_scene.gltf(filepath=os.path.join(OUT,'saturn.glb'),export_format='GLB',use_selection=True,export_yup=True,export_apply=True)
 
-scene=bpy.context.scene;scene.render.engine='CYCLES';scene.cycles.samples=48
+scene=bpy.context.scene;scene.render.engine='CYCLES';scene.cycles.samples=128
 scene.cycles.use_denoising=True
 scene.world.use_nodes=True
 scene.world.node_tree.nodes.get('Background').inputs['Color'].default_value=(.003,.004,.007,1)
 scene.world.node_tree.nodes.get('Background').inputs['Strength'].default_value=.04
-bpy.ops.object.light_add(type='AREA',location=(-4,-5,6))
-light=bpy.context.object;light.data.energy=950;light.data.size=.7
+bpy.ops.object.light_add(type='AREA',location=(-6,-3,5))
+light=bpy.context.object;light.data.energy=1150;light.data.size=.4
 light.rotation_euler=(Vector((0,0,0))-light.location).to_track_quat('-Z','Y').to_euler()
 bpy.ops.object.camera_add(location=(0,-7,1.1))
 camera=bpy.context.object;camera.rotation_euler=(Vector((0,0,0))-camera.location).to_track_quat('-Z','Y').to_euler()
