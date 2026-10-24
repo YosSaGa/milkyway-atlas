@@ -3,7 +3,10 @@ import { ArrowLeft, ArrowUpRight, Orbit, RotateCcw, Plus, Minus, Pause, Play, In
 import type * as THREE from 'three';
 import '../saturn.css';
 
-export default function SaturnExperience() {
+export default function SaturnExperience({ planetName = 'saturn' }: { planetName?: 'saturn' | 'earth' }) {
+  const isEarth = planetName === 'earth';
+  const title = isEarth ? 'EARTH' : 'SATURN';
+  const thai = isEarth ? 'โลก' : 'ดาวเสาร์';
   const host = useRef<HTMLDivElement>(null);
   const actions = useRef<{ reset: () => void; zoom: (factor: number) => void } | null>(null);
   const [auto, setAuto] = useState(false);
@@ -25,17 +28,17 @@ export default function SaturnExperience() {
       renderer.setPixelRatio(Math.min(devicePixelRatio, narrow ? 1.5 : 2));
       renderer.setClearColor('#020307');
       renderer.toneMapping = T.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.35;
+      renderer.toneMappingExposure = isEarth ? 1.05 : 1.35;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = T.PCFSoftShadowMap;
       const scene = new T.Scene();
       const camera = new T.PerspectiveCamera(35, 1, .1, 300);
       const canvas = renderer.domElement;
-      canvas.tabIndex = 0; canvas.setAttribute('aria-label', 'ดาวเสาร์สามมิติ ลากหมุน เลื่อนซูม ปุ่มลูกศรหมุนกล้อง');
+      canvas.tabIndex = 0; canvas.setAttribute('aria-label', `${thai}สามมิติ ลากหมุน เลื่อนซูม ปุ่มลูกศรหมุนกล้อง`);
       container.appendChild(canvas);
       const orbit = new OrbitControls(camera, canvas);
-      orbit.enableDamping = true; orbit.enablePan = false; orbit.minDistance = 3.7; orbit.maxDistance = 13; orbit.autoRotateSpeed = .3;
-      const home = new T.Vector3(0, 2.2, 7.8);
+      orbit.enableDamping = true; orbit.enablePan = false; orbit.minDistance = isEarth ? 2.6 : 3.7; orbit.maxDistance = 13; orbit.autoRotateSpeed = .3;
+      const home = isEarth ? new T.Vector3(0, .8, 5.5) : new T.Vector3(0, 2.2, 7.8);
       camera.position.copy(home); orbit.update();
       const sun = new T.DirectionalLight('#fff0d9', 3.6); sun.position.set(-4, 5, 4); sun.castShadow = true;
       const shadowSize = narrow ? 2048 : 4096;
@@ -69,48 +72,74 @@ export default function SaturnExperience() {
       canvas.addEventListener('keydown',keyboard);
       const contextLost = (e: Event) => { e.preventDefault(); lost = true; setStatus('error'); };
       canvas.addEventListener('webglcontextlost',contextLost);
-      const positions = [new T.Vector3(-6,5,3),new T.Vector3(-5,2,-3),new T.Vector3(1,6,5)];
-      const release = (object: THREE.Object3D) => { const textures = new Set<THREE.Texture>(); object.traverse(obj => { const mesh = obj as THREE.Mesh; mesh.geometry?.dispose(); mesh.customDepthMaterial?.dispose(); if(mesh.material) for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material]) { for(const value of Object.values(material)) if(value instanceof T.Texture) textures.add(value); material.dispose(); } }); textures.forEach(t=>t.dispose()); };
+      const positions = isEarth ? [new T.Vector3(-4,3,4),new T.Vector3(-5,1,-4),new T.Vector3(1,3,6)] : [new T.Vector3(-6,5,3),new T.Vector3(-5,2,-3),new T.Vector3(1,6,5)];
+      const release = (object: THREE.Object3D) => { const textures = new Set<THREE.Texture>(); object.traverse(obj => { const mesh = obj as THREE.Mesh; mesh.geometry?.dispose(); mesh.customDepthMaterial?.dispose(); if(mesh.material) for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material]) { for(const value of Object.values(material)) if(value instanceof T.Texture) textures.add(value); if(material instanceof T.ShaderMaterial) for(const uniform of Object.values(material.uniforms)) if(uniform.value instanceof T.Texture) textures.add(uniform.value); material.dispose(); } }); textures.forEach(t=>t.dispose()); };
       dispose = () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); orbit.dispose(); canvas.removeEventListener('keydown',keyboard); canvas.removeEventListener('webglcontextlost',contextLost); release(scene); renderer.dispose(); canvas.remove(); actions.current=null; };
       const tick = (now:number) => { if(gone) return; raf=requestAnimationFrame(tick); const delta=Math.min((now-last)/1000,.05);last=now; if(!visible||document.hidden||lost) return; orbit.autoRotate=settings.current.auto;orbit.update(delta);sun.position.lerp(positions[settings.current.lighting],reduced?1:1-Math.exp(-delta*4));renderer.render(scene,camera); };
       raf=requestAnimationFrame(tick);
       try {
-        const gltf = await new GLTFLoader().loadAsync('/models/saturn.glb');
+        const gltf = await new GLTFLoader().loadAsync(`/models/${planetName}.glb`);
         if(gone){release(gltf.scene);return;}
         model=gltf.scene;
         model.traverse(obj=>{if(obj instanceof T.Mesh){obj.castShadow=true;obj.receiveShadow=true;const mats=Array.isArray(obj.material)?obj.material:[obj.material];for(const mat of mats){mat.side=T.DoubleSide;if(mat.map)mat.map.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(obj.name==='Rings'){mat.transparent=true;mat.depthWrite=false;mat.shadowSide=T.DoubleSide;obj.customDepthMaterial=new T.MeshDepthMaterial({map:mat.map,alphaTest:.3,depthPacking:T.RGBADepthPacking,side:T.DoubleSide});}}}});
-        const planet = model.getObjectByName('Saturn') as THREE.Mesh | undefined;
+        const planet = model.getObjectByName(isEarth ? 'Earth' : 'Saturn') as THREE.Mesh | undefined;
+        if (isEarth && planet) {
+          const original = planet.material as THREE.MeshStandardMaterial;
+          if (!original.map || !original.emissiveMap) throw new Error('Earth day/night maps missing');
+          planet.material = new T.ShaderMaterial({
+            uniforms: { dayMap: { value: original.map }, nightMap: { value: original.emissiveMap }, sunlight: { value: sun.position } },
+            vertexShader: `varying vec2 texUv; varying vec3 nWorld; varying vec3 pWorld;
+              void main(){texUv=uv;nWorld=normalize(mat3(modelMatrix)*normal);vec4 p=modelMatrix*vec4(position,1.0);pWorld=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}`,
+            fragmentShader: `uniform sampler2D dayMap;uniform sampler2D nightMap;uniform vec3 sunlight;
+              varying vec2 texUv;varying vec3 nWorld;varying vec3 pWorld;
+              void main(){vec3 n=normalize(nWorld);vec3 l=normalize(sunlight-pWorld);vec3 v=normalize(cameraPosition-pWorld);
+                float incidence=dot(n,l);float daytime=smoothstep(-.10,.16,incidence);
+                vec3 surface=texture2D(dayMap,texUv).rgb;
+                vec3 cities=max(texture2D(nightMap,texUv).rgb-vec3(.008),vec3(0.0));
+                vec3 color=surface*(.012+max(incidence,0.0)*1.65)*daytime+cities*(1.0-daytime)*2.0;
+                float ocean=smoothstep(.025,.16,surface.b-surface.r);
+                color+=vec3(.6,.76,1.0)*pow(max(dot(reflect(-l,n),v),0.0),70.0)*ocean*daytime*.22;
+                float rim=pow(1.0-max(dot(n,v),0.0),4.0);
+                color+=vec3(.025,.12,.32)*rim*daytime*.35;
+                gl_FragColor=vec4(color,1.0);
+                #include <tonemapping_fragment>
+                #include <colorspace_fragment>
+              }`,
+          });
+          original.dispose();
+          const clouds = model.getObjectByName('Clouds') as THREE.Mesh | undefined;
+          if (clouds) { clouds.castShadow=false; const cm=clouds.material as THREE.MeshStandardMaterial;cm.transparent=true;cm.depthWrite=false;cm.opacity=.82;cm.side=T.FrontSide; }
+        }
         if (planet) {
           const atmosphereMaterial = new T.ShaderMaterial({
-            uniforms: { sunlight: { value: sun.position } },
+            uniforms: { sunlight: { value: sun.position }, tint: { value: new T.Color(isEarth ? '#438dff' : '#bba36e') }, strength: { value: isEarth ? .44 : .13 } },
             vertexShader: `varying vec3 worldNormal; varying vec3 worldPosition;
               void main(){ vec4 p=modelMatrix*vec4(position,1.0);worldPosition=p.xyz;
                 worldNormal=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*p; }`,
-            fragmentShader: `uniform vec3 sunlight;varying vec3 worldNormal;varying vec3 worldPosition;
+            fragmentShader: `uniform vec3 sunlight;uniform vec3 tint;uniform float strength;varying vec3 worldNormal;varying vec3 worldPosition;
               void main(){ vec3 n=normalize(worldNormal);vec3 v=normalize(cameraPosition-worldPosition);
                 float edge=pow(1.0-clamp(dot(n,v),0.0,1.0),4.5);
                 float day=smoothstep(-.1,.5,dot(n,normalize(sunlight-worldPosition)));
-                gl_FragColor=vec4(vec3(.73,.64,.43),edge*day*.13); }`,
+                gl_FragColor=vec4(tint,edge*day*strength); }`,
             transparent: true, depthWrite: false, blending: T.AdditiveBlending,
           });
           const atmosphere = new T.Mesh(planet.geometry.clone(), atmosphereMaterial);
-          atmosphere.name='Atmosphere';atmosphere.scale.setScalar(1.006);planet.add(atmosphere);
+          atmosphere.name='Atmosphere';atmosphere.scale.setScalar(isEarth ? 1.025 : 1.006);planet.add(atmosphere);
         }
         scene.add(model);setStatus('ready');
       }catch{if(!gone)setStatus('error');}
     }).catch(()=>{if(!gone)setStatus('error');});
     return()=>{gone=true;dispose();};
-  },[retry]);
+  },[retry, planetName, isEarth, thai]);
 
-  return <main className="saturn-experience">
+  return <main className={`saturn-experience ${isEarth ? 'earth-experience' : ''}`}>
     <div ref={host} className="saturn-stage"/>
-    <header className="saturn-header"><a href="/" className="saturn-brand"><Orbit size={23}/><span>MILKY WAY <small>OBSERVATORY</small></span></a><a href="/" className="saturn-back"><ArrowLeft size={14}/> กลับสู่ทางช้างเผือก</a><span className="saturn-edition">VISUAL STUDY — 001</span></header>
-    <div className="saturn-intro"><span className="saturn-kicker">THE RINGED WORLD</span><h1>SATURN<span>ดาวเสาร์</span></h1><p>ความเงียบงัน<br/>ที่มีวงแหวนโอบล้อม</p><button onClick={()=>setInfo(!info)} className="saturn-learn" aria-expanded={info}><Info size={15}/> เรื่องราวของดาวเสาร์ <ArrowUpRight size={15}/></button></div>
-    <div className="saturn-specimen"><span className="status-dot"/> SOL SYSTEM <span>/</span> VI</div>
+    <header className="saturn-header"><a href="/" className="saturn-brand"><Orbit size={23}/><span>MILKY WAY <small>OBSERVATORY</small></span></a><a href="/" className="saturn-back"><ArrowLeft size={14}/> กลับสู่ทางช้างเผือก</a><nav className="planet-switch" aria-label="เลือกดาวเคราะห์"><a href="/?view=earth" aria-current={isEarth?'page':undefined}>โลก</a><a href="/?view=saturn" aria-current={!isEarth?'page':undefined}>ดาวเสาร์</a><span>02 / 08</span></nav></header>
+    <div className="saturn-intro"><span className="saturn-kicker">{isEarth?'OUR PALE BLUE HOME':'THE RINGED WORLD'}</span><h1>{title}<span>{thai}</span></h1><p>{isEarth?<>มหาสมุทร เมฆ และแสงไฟ<br/>บนบ้านเพียงดวงเดียวของเรา</>:<>ความเงียบงัน<br/>ที่มีวงแหวนโอบล้อม</>}</p><button onClick={()=>setInfo(!info)} className="saturn-learn" aria-expanded={info}><Info size={15}/> เรื่องราวของ{thai} <ArrowUpRight size={15}/></button></div>
+    <div className="saturn-specimen"><span className="status-dot"/> SOL SYSTEM <span>/</span> {isEarth?'III':'VI'}</div>
     {status!=='ready'&&<div className="saturn-loading" role="status"><Orbit size={28}/><span>{status==='loading'?'กำลังเปิดโมเดลจาก Blender…':'ไม่สามารถเปิดฉาก WebGL ได้'}</span>{status==='error'&&<button onClick={()=>setRetry(retry+1)}>ลองอีกครั้ง</button>}</div>}
-    {info&&<aside className="saturn-info"><button className="saturn-close" onClick={()=>setInfo(false)} aria-label="ปิดข้อมูล"><X size={18}/></button><span className="saturn-kicker">BEYOND THE RINGS</span><h2>โลกแห่งน้ำแข็ง<br/>และก๊าซ</h2><p>ดาวเสาร์เป็นดาวเคราะห์ลำดับที่หกจากดวงอาทิตย์ วงแหวนประกอบด้วยชิ้นส่วนน้ำแข็งและหินจำนวนมาก ไม่ใช่แผ่นแข็งชิ้นเดียว</p><p>นี่คือโมเดลเพื่อศึกษางานภาพ พื้นผิวและแสงสร้างขึ้นเพื่อการนำเสนอ ไม่ใช่ภาพถ่ายหรือการจำลองข้อมูลสำรวจโดยตรง</p><a href="https://science.nasa.gov/saturn/" target="_blank" rel="noreferrer">สำรวจข้อมูลจาก NASA <ArrowUpRight size={14}/></a></aside>}
-    <footer className="saturn-console"><div className="saturn-caption"><span>DRAG TO ORBIT</span><p>ลากหมุน · เลื่อนซูม · มือถือใช้สองนิ้ว</p></div><div className="saturn-lighting" aria-label="เลือกแสง">{['แสงอาทิตย์','ย้อนแสง','มุมสว่าง'].map((label,i)=><button key={label} onClick={()=>setLighting(i)} aria-pressed={lighting===i}>{label}</button>)}</div><div className="saturn-actions"><button aria-label="ซูมเข้า" onClick={()=>actions.current?.zoom(.85)} disabled={status!=='ready'}><Plus size={17}/></button><button aria-label="ซูมออก" onClick={()=>actions.current?.zoom(1.18)} disabled={status!=='ready'}><Minus size={17}/></button><button aria-label="กลับมุมเริ่มต้น" onClick={()=>actions.current?.reset()} disabled={status!=='ready'}><RotateCcw size={16}/></button><button aria-label="หมุนอัตโนมัติ" aria-pressed={auto} onClick={()=>setAuto(!auto)} disabled={status!=='ready'}>{auto?<Pause size={16}/>:<Play size={16}/>}</button></div></footer>
-    <span className="saturn-credit">ภาพจำลอง · วงแหวน: <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noreferrer">Solar System Scope</a> / <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a> · ปรับวัสดุและแสง</span>
+    {info&&<aside className="saturn-info"><button className="saturn-close" onClick={()=>setInfo(false)} aria-label="ปิดข้อมูล"><X size={18}/></button><span className="saturn-kicker">{isEarth?'THE LIVING PLANET':'BEYOND THE RINGS'}</span><h2>{isEarth?<>ชีวิตบนดาว<br/>สีน้ำเงิน</>:<>โลกแห่งน้ำแข็ง<br/>และก๊าซ</>}</h2><p>{isEarth?'โลกเป็นดาวเคราะห์ลำดับที่สามจากดวงอาทิตย์ แสงอาทิตย์ส่องสว่างเพียงด้านหนึ่งของโลกในแต่ละขณะ ลองเลือกมุมกลางคืนเพื่อดูแสงจากเมืองบนด้านมืด':'ดาวเสาร์เป็นดาวเคราะห์ลำดับที่หกจากดวงอาทิตย์ วงแหวนประกอบด้วยชิ้นส่วนน้ำแข็งและหินจำนวนมาก ไม่ใช่แผ่นแข็งชิ้นเดียว'}</p><p>นี่คือโมเดลเพื่อศึกษางานภาพ พื้นผิวและแสงปรับเพื่อการนำเสนอ ไม่ใช่ภาพสด เมฆหรือเวลาบนโลกในขณะนี้</p><a href={`https://science.nasa.gov/${planetName}/`} target="_blank" rel="noreferrer">สำรวจข้อมูลจาก NASA <ArrowUpRight size={14}/></a></aside>}
+    <footer className="saturn-console"><div className="saturn-caption"><span>DRAG TO ORBIT</span><p>ลากหมุน · เลื่อนซูม · มือถือใช้สองนิ้ว</p></div><div className="saturn-lighting" aria-label="เลือกแสง">{(isEarth?['กลางวัน','กลางคืน','มุมสว่าง']:['แสงอาทิตย์','ย้อนแสง','มุมสว่าง']).map((label,i)=><button key={label} onClick={()=>setLighting(i)} aria-pressed={lighting===i}>{label}</button>)}</div><div className="saturn-actions"><button aria-label="ซูมเข้า" onClick={()=>actions.current?.zoom(.85)} disabled={status!=='ready'}><Plus size={17}/></button><button aria-label="ซูมออก" onClick={()=>actions.current?.zoom(1.18)} disabled={status!=='ready'}><Minus size={17}/></button><button aria-label="กลับมุมเริ่มต้น" onClick={()=>actions.current?.reset()} disabled={status!=='ready'}><RotateCcw size={16}/></button><button aria-label="หมุนอัตโนมัติ" aria-pressed={auto} onClick={()=>setAuto(!auto)} disabled={status!=='ready'}>{auto?<Pause size={16}/>:<Play size={16}/>}</button></div></footer>
+    <span className="saturn-credit">ภาพจำลอง · {isEarth?'พื้นผิว เมฆ และไฟเมือง':'วงแหวน'}: <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noreferrer">Solar System Scope</a> / <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a> · ปรับวัสดุและแสง</span>
   </main>;
 }
-
