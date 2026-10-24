@@ -1,5 +1,11 @@
 # MILKY WAY — บ้านของเราในจักรวาล
 
+## Blender visual study
+
+เปิด `/?view=saturn` เพื่อดูฉากตัวอย่างดาวเสาร์เต็มจอ ซึ่งโหลดโมเดลจริงจาก `public/models/saturn.glb` มี OrbitControls, แสงสามมุม, เงาของวงแหวนและดาว, ซูม และรีเซ็ตมุมกล้อง
+
+ไฟล์ต้นฉบับ: `art/saturn.blend` สร้างซ้ำได้ด้วย Blender 3.6: `blender --background --python art/create_saturn.py` ภาพ `art/saturn-preview.png` เป็นภาพเรนเดอร์ Cycles สำหรับตรวจงานโมเดล ไม่ใช่ screenshot ของ WebGL พื้นผิวเป็นภาพสร้างเชิงกระบวนการเพื่อการนำเสนอ ไม่ใช่ภาพสำรวจจริง
+
 เว็บภาษาไทยสำหรับสำรวจทางช้างเผือก สร้างด้วย React, TypeScript, Vite และ Tailwind CSS v4
 
 ## สำรวจแบบ 3D
