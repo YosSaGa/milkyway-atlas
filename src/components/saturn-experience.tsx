@@ -5,6 +5,7 @@ import '../saturn.css';
 
 const planets = {
   earth: { title: 'EARTH', thai: 'โลก', mesh: 'Earth', numeral: 'III', kicker: 'OUR PALE BLUE HOME', description: 'มหาสมุทร เมฆ และแสงไฟ บนบ้านเพียงดวงเดียวของเรา', infoKicker: 'THE LIVING PLANET', infoTitle: 'ชีวิตบนดาวสีน้ำเงิน', story: 'โลกเป็นดาวเคราะห์ลำดับที่สามจากดวงอาทิตย์ แสงอาทิตย์ส่องสว่างเพียงด้านหนึ่งของโลกในแต่ละขณะ ลองเลือกมุมกลางคืนเพื่อดูแสงจากเมืองบนด้านมืด', credit: 'พื้นผิว เมฆ และไฟเมือง', exposure: 1.05 },
+  mars: { title: 'MARS', thai: 'ดาวอังคาร', mesh: 'Mars', numeral: 'IV', kicker: 'THE RED PLANET', description: 'หุบเขาลึก ภูเขาไฟยักษ์ และร่องรอยของโลกในอดีต', infoKicker: 'VALLES MARINERIS', infoTitle: 'รอยแผลบนดาวสีแดง', story: 'ดาวอังคารเป็นดาวเคราะห์ลำดับที่สี่จากดวงอาทิตย์ สีแดงเกิดจากแร่เหล็กที่เกิดออกซิเดชันบนพื้นผิว หุบเขา Valles Marineris ทอดยาวกว่า 4,000 กิโลเมตร และบรรยากาศที่เบาบางประกอบด้วยคาร์บอนไดออกไซด์เป็นส่วนใหญ่', credit: 'แผนที่พื้นผิว', exposure: 1.1 },
   jupiter: { title: 'JUPITER', thai: 'ดาวพฤหัสบดี', mesh: 'Jupiter', numeral: 'V', kicker: 'A WORLD OF STORMS', description: 'ริ้วเมฆที่ไหลวน และพายุยักษ์กลางมหาสมุทรก๊าซ', infoKicker: 'THE GREAT RED SPOT', infoTitle: 'พายุบนดาวยักษ์', story: 'ดาวพฤหัสบดีเป็นดาวเคราะห์ลำดับที่ห้าและใหญ่ที่สุดในระบบสุริยะ แถบสีที่เห็นคือชั้นเมฆในบรรยากาศ จุดแดงใหญ่เป็นพายุขนาดมหึมา ดาวดวงนี้ไม่มีพื้นผิวแข็งแบบโลก', credit: 'แผนที่แถบเมฆ', exposure: 1.15 },
   saturn: { title: 'SATURN', thai: 'ดาวเสาร์', mesh: 'Saturn', numeral: 'VI', kicker: 'THE RINGED WORLD', description: 'ความเงียบงันที่มีวงแหวนโอบล้อม', infoKicker: 'BEYOND THE RINGS', infoTitle: 'โลกแห่งน้ำแข็งและก๊าซ', story: 'ดาวเสาร์เป็นดาวเคราะห์ลำดับที่หกจากดวงอาทิตย์ วงแหวนประกอบด้วยชิ้นส่วนน้ำแข็งและหินจำนวนมาก ไม่ใช่แผ่นแข็งชิ้นเดียว', credit: 'วงแหวน', exposure: 1.35 },
 };
@@ -44,7 +45,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       container.appendChild(canvas);
       const orbit = new OrbitControls(camera, canvas);
       orbit.enableDamping = true; orbit.enablePan = false; orbit.minDistance = planetName === 'saturn' ? 3.7 : 2.8; orbit.maxDistance = 13; orbit.autoRotateSpeed = .3;
-      const home = planetName === 'jupiter' ? new T.Vector3(0, .55, 6.2) : isEarth ? new T.Vector3(0, .8, 5.5) : new T.Vector3(0, 2.2, 7.8);
+      const home = (planetName === 'jupiter' || planetName === 'mars') ? new T.Vector3(0, .55, 6.2) : isEarth ? new T.Vector3(0, .8, 5.5) : new T.Vector3(0, 2.2, 7.8);
       camera.position.copy(home); orbit.update();
       const sun = new T.DirectionalLight('#fff0d9', 3.6); sun.position.set(-4, 5, 4); sun.castShadow = true;
       const shadowSize = narrow ? 2048 : 4096;
@@ -78,7 +79,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       canvas.addEventListener('keydown',keyboard);
       const contextLost = (e: Event) => { e.preventDefault(); lost = true; setStatus('error'); };
       canvas.addEventListener('webglcontextlost',contextLost);
-      const positions = isEarth ? [new T.Vector3(-4,3,4),new T.Vector3(-5,1,-4),new T.Vector3(1,3,6)] : [new T.Vector3(-6,5,3),new T.Vector3(-5,2,-3),new T.Vector3(1,6,5)];
+      const positions = planetName === 'mars' ? [new T.Vector3(-4,3,5),new T.Vector3(-5,1,-4),new T.Vector3(1,2,6)] : isEarth ? [new T.Vector3(-4,3,4),new T.Vector3(-5,1,-4),new T.Vector3(1,3,6)] : [new T.Vector3(-6,5,3),new T.Vector3(-5,2,-3),new T.Vector3(1,6,5)];
       const release = (object: THREE.Object3D) => { const textures = new Set<THREE.Texture>(); object.traverse(obj => { const mesh = obj as THREE.Mesh; mesh.geometry?.dispose(); mesh.customDepthMaterial?.dispose(); if(mesh.material) for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material]) { for(const value of Object.values(material)) if(value instanceof T.Texture) textures.add(value); if(material instanceof T.ShaderMaterial) for(const uniform of Object.values(material.uniforms)) if(uniform.value instanceof T.Texture) textures.add(uniform.value); material.dispose(); } }); textures.forEach(t=>t.dispose()); };
       dispose = () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); orbit.dispose(); canvas.removeEventListener('keydown',keyboard); canvas.removeEventListener('webglcontextlost',contextLost); release(scene); renderer.dispose(); canvas.remove(); actions.current=null; };
       const tick = (now:number) => { if(gone) return; raf=requestAnimationFrame(tick); const delta=Math.min((now-last)/1000,.05);last=now; if(!visible||document.hidden||lost) return; orbit.autoRotate=settings.current.auto;orbit.update(delta);sun.position.lerp(positions[settings.current.lighting],reduced?1:1-Math.exp(-delta*4));renderer.render(scene,camera); };
@@ -118,7 +119,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
         }
         if (planet) {
           const atmosphereMaterial = new T.ShaderMaterial({
-            uniforms: { sunlight: { value: sun.position }, tint: { value: new T.Color(isEarth ? '#438dff' : '#bba36e') }, strength: { value: isEarth ? .44 : .13 } },
+            uniforms: { sunlight: { value: sun.position }, tint: { value: new T.Color(isEarth ? '#438dff' : planetName === 'mars' ? '#bd7952' : '#bba36e') }, strength: { value: isEarth ? .44 : planetName === 'mars' ? .055 : .13 } },
             vertexShader: `varying vec3 worldNormal; varying vec3 worldPosition;
               void main(){ vec4 p=modelMatrix*vec4(position,1.0);worldPosition=p.xyz;
                 worldNormal=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*p; }`,
@@ -130,7 +131,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
             transparent: true, depthWrite: false, blending: T.AdditiveBlending,
           });
           const atmosphere = new T.Mesh(planet.geometry.clone(), atmosphereMaterial);
-          atmosphere.name='Atmosphere';atmosphere.scale.setScalar(isEarth ? 1.025 : 1.006);planet.add(atmosphere);
+          atmosphere.name='Atmosphere';atmosphere.scale.setScalar(isEarth ? 1.025 : planetName === 'mars' ? 1.003 : 1.006);planet.add(atmosphere);
         }
         scene.add(model);setStatus('ready');
       }catch{if(!gone)setStatus('error');}
@@ -140,7 +141,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
 
   return <main className={`saturn-experience ${isEarth ? 'earth-experience' : ''}`}>
     <div ref={host} className="saturn-stage"/>
-    <header className="saturn-header"><a href="/" className="saturn-brand"><Orbit size={23}/><span>MILKY WAY <small>OBSERVATORY</small></span></a><a href="/" className="saturn-back"><ArrowLeft size={14}/> กลับสู่ทางช้างเผือก</a><nav className="planet-switch" aria-label="เลือกดาวเคราะห์">{Object.entries(planets).map(([key, planet])=><a key={key} href={`/?view=${key}`} aria-current={planetName===key?'page':undefined}>{planet.thai}</a>)}<span>03 / 08</span></nav></header>
+    <header className="saturn-header"><a href="/" className="saturn-brand"><Orbit size={23}/><span>MILKY WAY <small>OBSERVATORY</small></span></a><a href="/" className="saturn-back"><ArrowLeft size={14}/> กลับสู่ทางช้างเผือก</a><nav className="planet-switch" aria-label="เลือกดาวเคราะห์">{Object.entries(planets).map(([key, planet])=><a key={key} href={`/?view=${key}`} aria-current={planetName===key?'page':undefined}>{planet.thai}</a>)}<span>{String(Object.keys(planets).length).padStart(2, '0')} / 08</span></nav></header>
     <div className="saturn-intro"><span className="saturn-kicker">{data.kicker}</span><h1>{title}<span>{thai}</span></h1><p>{data.description}</p><button onClick={()=>setInfo(!info)} className="saturn-learn" aria-expanded={info}><Info size={15}/> เรื่องราวของ{thai} <ArrowUpRight size={15}/></button></div>
     <div className="saturn-specimen"><span className="status-dot"/> SOL SYSTEM <span>/</span> {data.numeral}</div>
     {status!=='ready'&&<div className="saturn-loading" role="status"><Orbit size={28}/><span>{status==='loading'?'กำลังเปิดโมเดลจาก Blender…':'ไม่สามารถเปิดฉาก WebGL ได้'}</span>{status==='error'&&<button onClick={()=>setRetry(retry+1)}>ลองอีกครั้ง</button>}</div>}

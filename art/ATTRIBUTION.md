@@ -22,3 +22,7 @@ Clouds and city lights are illustrative composite maps, not live weather, power 
 ## Jupiter
 
 Cloud map by Solar System Scope / INOVE, CC BY 4.0 (source and license above). Retrieved from https://github.com/Shriisoot/Planets-texture/blob/main/8k_jupiter.jpg (texture only). Despite its filename, this mirror is 4096 × 2048; the site accurately labels it 4K. Embedded unchanged in the GLB; appearance is modified by oblate geometry, orientation, material and lighting. This composite is not live weather. Planet facts: https://science.nasa.gov/jupiter/jupiter-facts/
+
+## Mars
+
+8192 × 4096 surface map by Solar System Scope / INOVE, CC BY 4.0 (source and license above), retrieved from https://raw.githubusercontent.com/fury-gl/fury-data/master/textures/8k_mars.jpg. SHA-256: 4cc52149924abc6ae507d63032f994e1d42a55cb82c09e002d1a567ff66c23ee, matching the FURY fetcher manifest. Texture embedded in GLB; orientation, roughness, shape, lighting and atmospheric rim adjusted for presentation. No elevation data or live weather is represented. Facts: https://science.nasa.gov/mars/facts/

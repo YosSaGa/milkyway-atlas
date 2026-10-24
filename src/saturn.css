@@ -4,3 +4,5 @@
 .planet-switch{margin-left:auto;display:flex;align-items:center;gap:8px;pointer-events:auto}.planet-switch a{padding:8px 13px;border:1px solid #ffffff16;border-radius:20px;font-size:10px;color:#8d9199}.planet-switch a[aria-current=page]{border-color:#c7bba65c;color:#e6d6bc}.planet-switch span{font-size:8px;letter-spacing:2px;color:#686f7c;margin-left:10px}.earth-experience .saturn-kicker{color:#8baaca}.earth-experience .saturn-intro h1 span{color:#9db4c8}.earth-experience .saturn-specimen .status-dot{background:#8cbcf3}.earth-experience .saturn-lighting button[aria-pressed=true]{color:#b6d8f5;background:#a1c3e215}@media(max-width:800px){.planet-switch{gap:5px}.planet-switch a{padding:7px 10px;font-size:9px}.planet-switch span{display:none}.saturn-header .saturn-back{display:none}}
 
 .saturn-intro>p{max-width:250px}.saturn-header{gap:25px}@media(max-width:480px){.saturn-header{flex-wrap:wrap}.planet-switch{width:100%;margin-left:0}.saturn-intro{top:21%}.saturn-intro h1{font-size:40px}.saturn-learn{margin-top:10px}}
+
+@media(max-width:800px){.saturn-header{flex-wrap:wrap}.planet-switch{width:100%;margin-left:0;flex-wrap:wrap}.saturn-intro{top:21%}}
