@@ -30,3 +30,7 @@ Cloud map by Solar System Scope / INOVE, CC BY 4.0 (source and license above). R
 ## Venus
 
 4096 × 2048 atmosphere map by Solar System Scope / INOVE, CC BY 4.0 (source and license above). Mirror: https://github.com/Shriisoot/Planets-texture/blob/main/4k_venus_atmosphere.jpg. Embedded unchanged; orientation, material, light and atmospheric limb adjusted. Cloud patterns are illustrative/enhanced, not live weather or a calibrated true-color view. Facts: https://science.nasa.gov/venus/venus-facts/
+
+## Mercury
+
+8192 × 4096 surface map by Solar System Scope / INOVE, CC BY 4.0 (source and license above). Mirror: https://raw.githubusercontent.com/fury-gl/fury-data/master/textures/8k_mercury.jpg. SHA-256: 5c8bd885ae3571c6ba2cd34b3446b9c6d767e314bf0ee8c1d5c147cadd388fc3. Embedded unchanged; material, orientation and lighting adjusted for presentation. No elevation data or live observation. Facts: https://science.nasa.gov/mercury/facts/

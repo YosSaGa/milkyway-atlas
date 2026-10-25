@@ -1,13 +1,14 @@
 # MILKY WAY — บ้านของเราในจักรวาล
 
-## Planet progress — 5 / 8
+## Planet progress — 6 / 8
 
+- `/?view=mercury`: ดาวพุธ — แผนที่พื้นผิว 8K รายละเอียดหลุมอุกกาบาตและรัศมีเศษหิน ไม่มีชั้นบรรยากาศเรืองแสง
 - `/?view=venus`: ดาวศุกร์ — แผนที่ยอดเมฆ 4K และขอบบรรยากาศสีครีม ลวดลายขับรายละเอียดเพื่อการนำเสนอ
 - `/?view=mars`: ดาวอังคาร — พื้นผิว 8K มุมเริ่มต้นบริเวณ Valles Marineris วัสดุผิวด้านและขอบบรรยากาศบาง
 - `/?view=jupiter`: ดาวพฤหัสบดี — โมเดล Blender ทรงแป้นเล็กน้อย แผนที่แถบเมฆและจุดแดงใหญ่ 4K หมุนและปรับแสงได้
 - `/?view=earth`: โลก — โมเดลจาก Blender, แผนที่พื้นผิว/ไฟเมือง/เมฆ 4K, ไฟเมืองแสดงเฉพาะด้านมืดด้วย shader และชั้นบรรยากาศแยก
 - `/?view=saturn`: ดาวเสาร์ — พื้นผิวเมฆ 4K และวงแหวน 8K
-- ยังไม่สร้างฉากรายละเอียด: ดาวพุธ ดาวยูเรนัส ดาวเนปจูน
+- ยังไม่สร้างฉากรายละเอียด: ดาวยูเรนัส ดาวเนปจูน
 
 โหลด GLB เฉพาะดวงที่เลือกผ่านเมนูบนหน้า การนับนี้หมายถึงดาวเคราะห์ในระบบสุริยะ 8 ดวง ไม่รวมดวงอาทิตย์ ดาวเคราะห์แคระ หรือดาวฤกษ์ในกาแลคซี่
 
@@ -68,3 +69,5 @@ Jupiter: regenerate with `blender --background --python art/create_jupiter.py`. 
 Mars: regenerate with `blender --background --python art/create_mars.py`; source `art/mars.blend`, Cycles preview `art/mars-preview.png`. Surface features are in the color map, not displaced terrain. Browser interaction has not been verified.
 
 Venus: regenerate with `blender --background --python art/create_venus.py`; packed source `art/venus.blend`, Cycles preview `art/venus-preview.png`. Shows an illustrative cloud map, not exposed rock or a true-color observation.
+
+Mercury: regenerate with `blender --background --python art/create_mercury.py`; source `art/mercury.blend`, Cycles preview `art/mercury-preview.png`. Crater detail is in the color texture, not displaced elevation.

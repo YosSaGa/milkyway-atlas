@@ -4,6 +4,7 @@ import type * as THREE from 'three';
 import '../saturn.css';
 
 const planets = {
+  mercury: { title: 'MERCURY', thai: 'ดาวพุธ', mesh: 'Mercury', numeral: 'I', kicker: 'SCARS OF TIME', description: 'รอยชนที่บันทึกกาลเวลา บนโลกหินใกล้ดวงอาทิตย์', infoKicker: 'THE INNERMOST WORLD', infoTitle: 'โลกหินแห่งรอยอุกกาบาต', story: 'ดาวพุธเป็นดาวเคราะห์ที่เล็กที่สุดและอยู่ใกล้ดวงอาทิตย์ที่สุด พื้นผิวเต็มไปด้วยหลุมจากการชนของอุกกาบาต มีเพียงชั้นเอกโซสเฟียร์ที่เบาบางมาก จึงไม่มีชั้นเมฆหรือขอบบรรยากาศเรืองแสงแบบโลกในภาพจำลองนี้', credit: 'แผนที่พื้นผิว', exposure: 1.1 },
   venus: { title: 'VENUS', thai: 'ดาวศุกร์', mesh: 'Venus', numeral: 'II', kicker: 'BEHIND THE VEIL', description: 'โลกที่ซ่อนอยู่ใต้ม่านเมฆ และบรรยากาศอันหนาแน่น', infoKicker: 'A WORLD UNDER CLOUDS', infoTitle: 'ใต้ม่านเมฆสีครีม', story: 'ดาวศุกร์เป็นดาวเคราะห์ลำดับที่สองจากดวงอาทิตย์ มีบรรยากาศคาร์บอนไดออกไซด์หนาแน่นและเมฆกรดซัลฟิวริก ปรากฏการณ์เรือนกระจกทำให้พื้นผิวร้อนที่สุดในระบบสุริยะ ภาพนี้แสดงยอดเมฆ โดยขับสีและรายละเอียดเพื่อการศึกษา ไม่ใช่พื้นผิวหินที่อยู่ด้านล่าง', credit: 'แผนที่เมฆ', exposure: 1.05 },
   earth: { title: 'EARTH', thai: 'โลก', mesh: 'Earth', numeral: 'III', kicker: 'OUR PALE BLUE HOME', description: 'มหาสมุทร เมฆ และแสงไฟ บนบ้านเพียงดวงเดียวของเรา', infoKicker: 'THE LIVING PLANET', infoTitle: 'ชีวิตบนดาวสีน้ำเงิน', story: 'โลกเป็นดาวเคราะห์ลำดับที่สามจากดวงอาทิตย์ แสงอาทิตย์ส่องสว่างเพียงด้านหนึ่งของโลกในแต่ละขณะ ลองเลือกมุมกลางคืนเพื่อดูแสงจากเมืองบนด้านมืด', credit: 'พื้นผิว เมฆ และไฟเมือง', exposure: 1.05 },
   mars: { title: 'MARS', thai: 'ดาวอังคาร', mesh: 'Mars', numeral: 'IV', kicker: 'THE RED PLANET', description: 'หุบเขาลึก ภูเขาไฟยักษ์ และร่องรอยของโลกในอดีต', infoKicker: 'VALLES MARINERIS', infoTitle: 'รอยแผลบนดาวสีแดง', story: 'ดาวอังคารเป็นดาวเคราะห์ลำดับที่สี่จากดวงอาทิตย์ สีแดงเกิดจากแร่เหล็กที่เกิดออกซิเดชันบนพื้นผิว หุบเขา Valles Marineris ทอดยาวกว่า 4,000 กิโลเมตร และบรรยากาศที่เบาบางประกอบด้วยคาร์บอนไดออกไซด์เป็นส่วนใหญ่', credit: 'แผนที่พื้นผิว', exposure: 1.1 },
@@ -46,7 +47,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       container.appendChild(canvas);
       const orbit = new OrbitControls(camera, canvas);
       orbit.enableDamping = true; orbit.enablePan = false; orbit.minDistance = planetName === 'saturn' ? 3.7 : 2.8; orbit.maxDistance = 13; orbit.autoRotateSpeed = .3;
-      const home = (planetName === 'jupiter' || planetName === 'mars' || planetName === 'venus') ? new T.Vector3(0, .55, 6.2) : isEarth ? new T.Vector3(0, .8, 5.5) : new T.Vector3(0, 2.2, 7.8);
+      const home = (planetName !== 'saturn' && !isEarth) ? new T.Vector3(0, .55, 6.2) : isEarth ? new T.Vector3(0, .8, 5.5) : new T.Vector3(0, 2.2, 7.8);
       camera.position.copy(home); orbit.update();
       const sun = new T.DirectionalLight('#fff0d9', 3.6); sun.position.set(-4, 5, 4); sun.castShadow = true;
       const shadowSize = narrow ? 2048 : 4096;
@@ -80,7 +81,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       canvas.addEventListener('keydown',keyboard);
       const contextLost = (e: Event) => { e.preventDefault(); lost = true; setStatus('error'); };
       canvas.addEventListener('webglcontextlost',contextLost);
-      const positions = (planetName === 'mars' || planetName === 'venus') ? [new T.Vector3(-4,3,5),new T.Vector3(-5,1,-4),new T.Vector3(1,2,6)] : isEarth ? [new T.Vector3(-4,3,4),new T.Vector3(-5,1,-4),new T.Vector3(1,3,6)] : [new T.Vector3(-6,5,3),new T.Vector3(-5,2,-3),new T.Vector3(1,6,5)];
+      const positions = (planetName === 'mars' || planetName === 'venus' || planetName === 'mercury') ? [new T.Vector3(-4,3,5),new T.Vector3(-5,1,-4),new T.Vector3(1,2,6)] : isEarth ? [new T.Vector3(-4,3,4),new T.Vector3(-5,1,-4),new T.Vector3(1,3,6)] : [new T.Vector3(-6,5,3),new T.Vector3(-5,2,-3),new T.Vector3(1,6,5)];
       const release = (object: THREE.Object3D) => { const textures = new Set<THREE.Texture>(); object.traverse(obj => { const mesh = obj as THREE.Mesh; mesh.geometry?.dispose(); mesh.customDepthMaterial?.dispose(); if(mesh.material) for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material]) { for(const value of Object.values(material)) if(value instanceof T.Texture) textures.add(value); if(material instanceof T.ShaderMaterial) for(const uniform of Object.values(material.uniforms)) if(uniform.value instanceof T.Texture) textures.add(uniform.value); material.dispose(); } }); textures.forEach(t=>t.dispose()); };
       dispose = () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); orbit.dispose(); canvas.removeEventListener('keydown',keyboard); canvas.removeEventListener('webglcontextlost',contextLost); release(scene); renderer.dispose(); canvas.remove(); actions.current=null; };
       const tick = (now:number) => { if(gone) return; raf=requestAnimationFrame(tick); const delta=Math.min((now-last)/1000,.05);last=now; if(!visible||document.hidden||lost) return; orbit.autoRotate=settings.current.auto;orbit.update(delta);sun.position.lerp(positions[settings.current.lighting],reduced?1:1-Math.exp(-delta*4));renderer.render(scene,camera); };
@@ -118,7 +119,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
           const clouds = model.getObjectByName('Clouds') as THREE.Mesh | undefined;
           if (clouds) { clouds.castShadow=false; const cm=clouds.material as THREE.MeshStandardMaterial;cm.transparent=true;cm.depthWrite=false;cm.opacity=.82;cm.side=T.FrontSide; }
         }
-        if (planet) {
+        if (planet && planetName !== 'mercury') {
           const atmosphereMaterial = new T.ShaderMaterial({
             uniforms: { sunlight: { value: sun.position }, tint: { value: new T.Color(isEarth ? '#438dff' : planetName === 'mars' ? '#bd7952' : planetName === 'venus' ? '#eed6a1' : '#bba36e') }, strength: { value: isEarth ? .44 : planetName === 'mars' ? .055 : planetName === 'venus' ? .24 : .13 } },
             vertexShader: `varying vec3 worldNormal; varying vec3 worldPosition;
