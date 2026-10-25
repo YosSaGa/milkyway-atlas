@@ -78,3 +78,5 @@ Mercury: regenerate with `blender --background --python art/create_mercury.py`; 
 Ice giants: `blender --background --python art/create_ice_giants.py` regenerates both GLBs, packed .blend sources and Cycles previews. Uranus rings are representative bands with exaggerated visibility; Neptune color is an artistic approximation, not calibrated true color. Browser interaction is not verified.
 
 Default planet lighting is now camera-relative (สำรวจรอบดวง): the key light follows orbit controls immediately and ambient fill is increased. Earth day/night and atmospheric shaders share the same moving light position. Fixed lighting/night presets remain available. This exploration lighting is illustrative, not a real solar terminator.
+
+The homepage is now a galaxy-themed planet selector with all eight destination links and a lightweight animated WebGL backdrop. Mobile uses a two-column grid; reduced motion and a pause button are supported. The original introduction remains at `/?view=about`. Planet cards use resized Blender previews, while GLBs load only on individual planet pages.
