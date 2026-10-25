@@ -26,3 +26,7 @@ Cloud map by Solar System Scope / INOVE, CC BY 4.0 (source and license above). R
 ## Mars
 
 8192 × 4096 surface map by Solar System Scope / INOVE, CC BY 4.0 (source and license above), retrieved from https://raw.githubusercontent.com/fury-gl/fury-data/master/textures/8k_mars.jpg. SHA-256: 4cc52149924abc6ae507d63032f994e1d42a55cb82c09e002d1a567ff66c23ee, matching the FURY fetcher manifest. Texture embedded in GLB; orientation, roughness, shape, lighting and atmospheric rim adjusted for presentation. No elevation data or live weather is represented. Facts: https://science.nasa.gov/mars/facts/
+
+## Venus
+
+4096 × 2048 atmosphere map by Solar System Scope / INOVE, CC BY 4.0 (source and license above). Mirror: https://github.com/Shriisoot/Planets-texture/blob/main/4k_venus_atmosphere.jpg. Embedded unchanged; orientation, material, light and atmospheric limb adjusted. Cloud patterns are illustrative/enhanced, not live weather or a calibrated true-color view. Facts: https://science.nasa.gov/venus/venus-facts/

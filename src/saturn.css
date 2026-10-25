@@ -6,3 +6,5 @@
 .saturn-intro>p{max-width:250px}.saturn-header{gap:25px}@media(max-width:480px){.saturn-header{flex-wrap:wrap}.planet-switch{width:100%;margin-left:0}.saturn-intro{top:21%}.saturn-intro h1{font-size:40px}.saturn-learn{margin-top:10px}}
 
 @media(max-width:800px){.saturn-header{flex-wrap:wrap}.planet-switch{width:100%;margin-left:0;flex-wrap:wrap}.saturn-intro{top:21%}}
+
+.planet-switch{flex-wrap:wrap}@media(min-width:801px) and (max-width:1150px){.saturn-header .saturn-back{display:none}}@media(max-width:800px){.planet-switch{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}.planet-switch a{white-space:nowrap;flex-shrink:0}}
