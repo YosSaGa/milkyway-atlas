@@ -8,3 +8,5 @@
 @media(max-width:800px){.saturn-header{flex-wrap:wrap}.planet-switch{width:100%;margin-left:0;flex-wrap:wrap}.saturn-intro{top:21%}}
 
 .planet-switch{flex-wrap:wrap}@media(min-width:801px) and (max-width:1150px){.saturn-header .saturn-back{display:none}}@media(max-width:800px){.planet-switch{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}.planet-switch a{white-space:nowrap;flex-shrink:0}}
+
+.saturn-header{flex-wrap:wrap;gap:18px}.planet-switch{width:100%;margin-left:0;flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px;scrollbar-width:thin}.planet-switch a{white-space:nowrap;flex-shrink:0}.planet-switch span{white-space:nowrap}.saturn-back{margin-left:auto}@media(min-width:801px){.saturn-intro h1{font-size:clamp(46px,5vw,76px)}}

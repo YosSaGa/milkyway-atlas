@@ -34,3 +34,7 @@ Cloud map by Solar System Scope / INOVE, CC BY 4.0 (source and license above). R
 ## Mercury
 
 8192 × 4096 surface map by Solar System Scope / INOVE, CC BY 4.0 (source and license above). Mirror: https://raw.githubusercontent.com/fury-gl/fury-data/master/textures/8k_mercury.jpg. SHA-256: 5c8bd885ae3571c6ba2cd34b3446b9c6d767e314bf0ee8c1d5c147cadd388fc3. Embedded unchanged; material, orientation and lighting adjusted for presentation. No elevation data or live observation. Facts: https://science.nasa.gov/mercury/facts/
+
+## Uranus and Neptune
+
+2048 × 1024 cloud maps by Solar System Scope / INOVE, CC BY 4.0 (source and license above). Public mirrors: https://raw.githubusercontent.com/fury-gl/fury-data/master/textures/2k_uranus.jpg and https://raw.githubusercontent.com/fury-gl/fury-data/master/textures/2k_neptune.jpg. Uranus map is embedded unchanged. Neptune luminance detail is remapped to a blue-green palette in Blender, then embedded; this is an artistic approximation informed by https://www.ox.ac.uk/news/2024-01-05-new-images-reveal-what-neptune-and-uranus-really-look-0 and is not a calibrated color reconstruction. Storm features are historical/illustrative. Uranus ring geometry is authored here with exaggerated width and brightness; five bands do not represent the full ring system. Neptune rings are omitted from this study. Facts: https://science.nasa.gov/uranus/facts/ and https://science.nasa.gov/neptune/neptune-facts/

@@ -10,6 +10,8 @@ const planets = {
   mars: { title: 'MARS', thai: 'ดาวอังคาร', mesh: 'Mars', numeral: 'IV', kicker: 'THE RED PLANET', description: 'หุบเขาลึก ภูเขาไฟยักษ์ และร่องรอยของโลกในอดีต', infoKicker: 'VALLES MARINERIS', infoTitle: 'รอยแผลบนดาวสีแดง', story: 'ดาวอังคารเป็นดาวเคราะห์ลำดับที่สี่จากดวงอาทิตย์ สีแดงเกิดจากแร่เหล็กที่เกิดออกซิเดชันบนพื้นผิว หุบเขา Valles Marineris ทอดยาวกว่า 4,000 กิโลเมตร และบรรยากาศที่เบาบางประกอบด้วยคาร์บอนไดออกไซด์เป็นส่วนใหญ่', credit: 'แผนที่พื้นผิว', exposure: 1.1 },
   jupiter: { title: 'JUPITER', thai: 'ดาวพฤหัสบดี', mesh: 'Jupiter', numeral: 'V', kicker: 'A WORLD OF STORMS', description: 'ริ้วเมฆที่ไหลวน และพายุยักษ์กลางมหาสมุทรก๊าซ', infoKicker: 'THE GREAT RED SPOT', infoTitle: 'พายุบนดาวยักษ์', story: 'ดาวพฤหัสบดีเป็นดาวเคราะห์ลำดับที่ห้าและใหญ่ที่สุดในระบบสุริยะ แถบสีที่เห็นคือชั้นเมฆในบรรยากาศ จุดแดงใหญ่เป็นพายุขนาดมหึมา ดาวดวงนี้ไม่มีพื้นผิวแข็งแบบโลก', credit: 'แผนที่แถบเมฆ', exposure: 1.15 },
   saturn: { title: 'SATURN', thai: 'ดาวเสาร์', mesh: 'Saturn', numeral: 'VI', kicker: 'THE RINGED WORLD', description: 'ความเงียบงันที่มีวงแหวนโอบล้อม', infoKicker: 'BEYOND THE RINGS', infoTitle: 'โลกแห่งน้ำแข็งและก๊าซ', story: 'ดาวเสาร์เป็นดาวเคราะห์ลำดับที่หกจากดวงอาทิตย์ วงแหวนประกอบด้วยชิ้นส่วนน้ำแข็งและหินจำนวนมาก ไม่ใช่แผ่นแข็งชิ้นเดียว', credit: 'วงแหวน', exposure: 1.35 },
+  uranus: { title: 'URANUS', thai: 'ดาวยูเรนัส', mesh: 'Uranus', numeral: 'VII', kicker: 'A WORLD ON ITS SIDE', description: 'ยักษ์น้ำแข็งสีฟ้าอ่อน กับวงแหวนที่เอียงไปพร้อมโลกทั้งใบ', infoKicker: 'THE TILTED GIANT', infoTitle: 'โลกที่หมุนตะแคง', story: 'ยูเรนัสเป็นดาวเคราะห์ลำดับที่เจ็ด แกนหมุนเอียงประมาณ 98 องศา มีมีเทนในบรรยากาศที่ช่วยให้เห็นเป็นสีฟ้าอมเขียว วงแหวนในฉากเป็นเส้นตัวแทนที่ขยายความหนาและความสว่างให้มองเห็น ไม่ใช่วงแหวนครบทุกวงหรือมาตราส่วนจริง', credit: 'แผนที่เมฆ', exposure: 1.1 },
+  neptune: { title: 'NEPTUNE', thai: 'ดาวเนปจูน', mesh: 'Neptune', numeral: 'VIII', kicker: 'WINDS AT THE EDGE', description: 'แถบเมฆและพายุ บนดาวเคราะห์ไกลสุดของระบบสุริยะ', infoKicker: 'THE DISTANT ICE GIANT', infoTitle: 'โลกแห่งสายลมไกลโพ้น', story: 'เนปจูนเป็นดาวเคราะห์ลำดับที่แปด มีลมรุนแรงในบรรยากาศและมีเทนที่ดูดกลืนแสงสีแดง โทนสีในฉากปรับเป็นฟ้าอมเขียวเพื่อการนำเสนอ ไม่ใช่การสอบเทียบสีจริง จุดพายุในแผนที่เป็นภาพประกอบจากอดีต ไม่ใช่สภาพอากาศปัจจุบัน', credit: 'แผนที่เมฆ ปรับโทนสี', exposure: 1.1 },
 };
 
 export default function SaturnExperience({ planetName = 'saturn' }: { planetName?: keyof typeof planets }) {
@@ -24,6 +26,9 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
   const [status, setStatus] = useState('loading');
   const [retry, setRetry] = useState(0);
   const settings = useRef({ auto, lighting }); settings.current = { auto, lighting };
+  useEffect(() => {
+    document.querySelector('.planet-switch [aria-current=page]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [planetName]);
   useEffect(() => {
     const container = host.current!;
     let gone = false;
@@ -46,8 +51,8 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       canvas.tabIndex = 0; canvas.setAttribute('aria-label', `${thai}สามมิติ ลากหมุน เลื่อนซูม ปุ่มลูกศรหมุนกล้อง`);
       container.appendChild(canvas);
       const orbit = new OrbitControls(camera, canvas);
-      orbit.enableDamping = true; orbit.enablePan = false; orbit.minDistance = planetName === 'saturn' ? 3.7 : 2.8; orbit.maxDistance = 13; orbit.autoRotateSpeed = .3;
-      const home = (planetName !== 'saturn' && !isEarth) ? new T.Vector3(0, .55, 6.2) : isEarth ? new T.Vector3(0, .8, 5.5) : new T.Vector3(0, 2.2, 7.8);
+      orbit.enableDamping = true; orbit.enablePan = false; orbit.minDistance = planetName === 'uranus' ? 4.8 : planetName === 'saturn' ? 3.7 : 2.8; orbit.maxDistance = 13; orbit.autoRotateSpeed = .3;
+      const home = planetName === 'uranus' ? new T.Vector3(0, .55, 10) : (planetName !== 'saturn' && !isEarth) ? new T.Vector3(0, .55, 6.2) : isEarth ? new T.Vector3(0, .8, 5.5) : new T.Vector3(0, 2.2, 7.8);
       camera.position.copy(home); orbit.update();
       const sun = new T.DirectionalLight('#fff0d9', 3.6); sun.position.set(-4, 5, 4); sun.castShadow = true;
       const shadowSize = narrow ? 2048 : 4096;
@@ -81,7 +86,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       canvas.addEventListener('keydown',keyboard);
       const contextLost = (e: Event) => { e.preventDefault(); lost = true; setStatus('error'); };
       canvas.addEventListener('webglcontextlost',contextLost);
-      const positions = (planetName === 'mars' || planetName === 'venus' || planetName === 'mercury') ? [new T.Vector3(-4,3,5),new T.Vector3(-5,1,-4),new T.Vector3(1,2,6)] : isEarth ? [new T.Vector3(-4,3,4),new T.Vector3(-5,1,-4),new T.Vector3(1,3,6)] : [new T.Vector3(-6,5,3),new T.Vector3(-5,2,-3),new T.Vector3(1,6,5)];
+      const positions = (planetName === 'uranus' || planetName === 'neptune' || planetName === 'mars' || planetName === 'venus' || planetName === 'mercury') ? [new T.Vector3(-4,3,5),new T.Vector3(-5,1,-4),new T.Vector3(1,2,6)] : isEarth ? [new T.Vector3(-4,3,4),new T.Vector3(-5,1,-4),new T.Vector3(1,3,6)] : [new T.Vector3(-6,5,3),new T.Vector3(-5,2,-3),new T.Vector3(1,6,5)];
       const release = (object: THREE.Object3D) => { const textures = new Set<THREE.Texture>(); object.traverse(obj => { const mesh = obj as THREE.Mesh; mesh.geometry?.dispose(); mesh.customDepthMaterial?.dispose(); if(mesh.material) for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material]) { for(const value of Object.values(material)) if(value instanceof T.Texture) textures.add(value); if(material instanceof T.ShaderMaterial) for(const uniform of Object.values(material.uniforms)) if(uniform.value instanceof T.Texture) textures.add(uniform.value); material.dispose(); } }); textures.forEach(t=>t.dispose()); };
       dispose = () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); orbit.dispose(); canvas.removeEventListener('keydown',keyboard); canvas.removeEventListener('webglcontextlost',contextLost); release(scene); renderer.dispose(); canvas.remove(); actions.current=null; };
       const tick = (now:number) => { if(gone) return; raf=requestAnimationFrame(tick); const delta=Math.min((now-last)/1000,.05);last=now; if(!visible||document.hidden||lost) return; orbit.autoRotate=settings.current.auto;orbit.update(delta);sun.position.lerp(positions[settings.current.lighting],reduced?1:1-Math.exp(-delta*4));renderer.render(scene,camera); };
@@ -121,7 +126,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
         }
         if (planet && planetName !== 'mercury') {
           const atmosphereMaterial = new T.ShaderMaterial({
-            uniforms: { sunlight: { value: sun.position }, tint: { value: new T.Color(isEarth ? '#438dff' : planetName === 'mars' ? '#bd7952' : planetName === 'venus' ? '#eed6a1' : '#bba36e') }, strength: { value: isEarth ? .44 : planetName === 'mars' ? .055 : planetName === 'venus' ? .24 : .13 } },
+            uniforms: { sunlight: { value: sun.position }, tint: { value: new T.Color(isEarth ? '#438dff' : planetName === 'mars' ? '#bd7952' : planetName === 'venus' ? '#eed6a1' : (planetName === 'uranus' || planetName === 'neptune') ? '#75bdce' : '#bba36e') }, strength: { value: isEarth ? .44 : planetName === 'mars' ? .055 : planetName === 'venus' ? .24 : .13 } },
             vertexShader: `varying vec3 worldNormal; varying vec3 worldPosition;
               void main(){ vec4 p=modelMatrix*vec4(position,1.0);worldPosition=p.xyz;
                 worldNormal=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*p; }`,
@@ -141,7 +146,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
     return()=>{gone=true;dispose();};
   },[retry, planetName, isEarth, thai, data]);
 
-  return <main className={`saturn-experience ${isEarth ? 'earth-experience' : ''}`}>
+  return <main className={`saturn-experience ${isEarth || planetName === 'uranus' || planetName === 'neptune' ? 'earth-experience' : ''}`}>
     <div ref={host} className="saturn-stage"/>
     <header className="saturn-header"><a href="/" className="saturn-brand"><Orbit size={23}/><span>MILKY WAY <small>OBSERVATORY</small></span></a><a href="/" className="saturn-back"><ArrowLeft size={14}/> กลับสู่ทางช้างเผือก</a><nav className="planet-switch" aria-label="เลือกดาวเคราะห์">{Object.entries(planets).map(([key, planet])=><a key={key} href={`/?view=${key}`} aria-current={planetName===key?'page':undefined}>{planet.thai}</a>)}<span>{String(Object.keys(planets).length).padStart(2, '0')} / 08</span></nav></header>
     <div className="saturn-intro"><span className="saturn-kicker">{data.kicker}</span><h1>{title}<span>{thai}</span></h1><p>{data.description}</p><button onClick={()=>setInfo(!info)} className="saturn-learn" aria-expanded={info}><Info size={15}/> เรื่องราวของ{thai} <ArrowUpRight size={15}/></button></div>
