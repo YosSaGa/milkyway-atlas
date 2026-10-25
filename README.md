@@ -84,3 +84,5 @@ The homepage is now a galaxy-themed planet selector with all eight destination l
 Homepage journey replaces the card map: full-screen orbitable Milky Way particle scene → projected Solar System marker → camera flight → textured 3D solar overview → individual planet scene. A keyboard-accessible entry button and planet links duplicate scene picking. Overview textures are 1K derivatives of the credited planet maps; galaxy positions and solar spacing are illustrative. Browser visuals and pointer interaction remain unverified.
 
 The homepage now starts in the solar overview with all eight planets orbiting continuously at illustrative, compressed speeds. Labels track the moving planets. Pause/resume is available; reduced-motion starts paused, and dragging or focusing a planet label temporarily pauses movement for selection. The Milky Way remains accessible through the back button.
+
+Solar visual revision: enlarged planets, 2K overview maps, textured Saturn rings, procedural solar surface/corona, slower orbits and hover-only scene labels. The destination strip remains keyboard/touch accessible.
