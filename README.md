@@ -76,3 +76,5 @@ Venus: regenerate with `blender --background --python art/create_venus.py`; pack
 Mercury: regenerate with `blender --background --python art/create_mercury.py`; source `art/mercury.blend`, Cycles preview `art/mercury-preview.png`. Crater detail is in the color texture, not displaced elevation.
 
 Ice giants: `blender --background --python art/create_ice_giants.py` regenerates both GLBs, packed .blend sources and Cycles previews. Uranus rings are representative bands with exaggerated visibility; Neptune color is an artistic approximation, not calibrated true color. Browser interaction is not verified.
+
+Default planet lighting is now camera-relative (สำรวจรอบดวง): the key light follows orbit controls immediately and ambient fill is increased. Earth day/night and atmospheric shaders share the same moving light position. Fixed lighting/night presets remain available. This exploration lighting is illustrative, not a real solar terminator.
