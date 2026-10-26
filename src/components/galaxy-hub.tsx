@@ -62,7 +62,7 @@ export default function GalaxyHub(){
      const anchor=new T.Group();anchor.position.set(Math.cos(a)*r,0,Math.sin(a)*r);Object.assign(anchor.userData,{id,radius:r,angle:a,speed:.055/(1+i*.3)});solar.add(anchor);spheres.push(anchor);
      const pts=Array.from({length:161},(_,n)=>new T.Vector3(Math.cos(n*Math.PI/80)*r,0,Math.sin(n*Math.PI/80)*r));
      solar.add(new T.Line(new T.BufferGeometry().setFromPoints(pts),new T.LineBasicMaterial({color:'#92a9c3',transparent:true,opacity:.085})));
-     loader.load('/models/overview/'+id+'.glb',gltf=>{
+     const loadModel=(attempt=0)=>loader.load('/models/overview/'+id+'.glb'+(attempt?'?retry='+attempt:''),gltf=>{
       const model=gltf.scene;if(gone){releaseModel(model);return;}
       const body=model.getObjectByName(id[0].toUpperCase()+id.slice(1)) as import('three').Mesh|undefined;
       if(!body?.geometry){releaseModel(model);setStatus('error');return;}
@@ -75,7 +75,7 @@ export default function GalaxyHub(){
         Object.values(mat).forEach(value=>{if(value instanceof T.Texture)value.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());});
        });
       });anchor.add(model);loadedModels++;if(loadedModels===planets.length)setStatus('ready');
-     },undefined,()=>{if(!gone)setStatus('error');});
+     },undefined,error=>{if(gone)return;if(attempt<2){loadModel(attempt+1);return;}console.warn('Planet model failed:',id,error);setStatus('error');});loadModel();
     });
    }
    loadSolar();
