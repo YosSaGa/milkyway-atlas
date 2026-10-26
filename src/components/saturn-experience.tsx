@@ -1,3 +1,4 @@
+import SceneLoading from './scene-loading';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, Orbit, RotateCcw, Plus, Minus, Pause, Play, Info, X } from 'lucide-react';
 import type * as THREE from 'three';
@@ -25,6 +26,8 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
   const [info, setInfo] = useState(false);
   const [status, setStatus] = useState('loading');
   const [retry, setRetry] = useState(0);
+  const [progress, setProgress] = useState<number>();
+  const [phase, setPhase] = useState('กำลังโหลดโมเดลสามมิติ');
   const settings = useRef({ auto, lighting }); settings.current = { auto, lighting };
   useEffect(() => {
     document.querySelector('.planet-switch [aria-current=page]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
@@ -33,7 +36,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
     const container = host.current!;
     let gone = false;
     let dispose = () => {};
-    setStatus('loading');
+    setStatus('loading');setProgress(undefined);setPhase('กำลังโหลดโมเดลสามมิติ');
     Promise.all([import('three'), import('three/addons/controls/OrbitControls.js'), import('three/addons/loaders/GLTFLoader.js')]).then(async ([T, { OrbitControls }, { GLTFLoader }]) => {
       if (gone) return;
       const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -91,7 +94,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       const positions = (planetName === 'uranus' || planetName === 'neptune' || planetName === 'mars' || planetName === 'venus' || planetName === 'mercury') ? [new T.Vector3(-4,3,5),new T.Vector3(-5,1,-4),new T.Vector3(1,2,6)] : isEarth ? [new T.Vector3(-4,3,4),new T.Vector3(-5,1,-4),new T.Vector3(1,3,6)] : [new T.Vector3(-6,5,3),new T.Vector3(-5,2,-3),new T.Vector3(1,6,5)];
       const release = (object: THREE.Object3D) => { const textures = new Set<THREE.Texture>(); object.traverse(obj => { const mesh = obj as THREE.Mesh; mesh.geometry?.dispose(); mesh.customDepthMaterial?.dispose(); if(mesh.material) for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material]) { for(const value of Object.values(material)) if(value instanceof T.Texture) textures.add(value); if(material instanceof T.ShaderMaterial) for(const uniform of Object.values(material.uniforms)) if(uniform.value instanceof T.Texture) textures.add(uniform.value); material.dispose(); } }); textures.forEach(t=>t.dispose()); };
       dispose = () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); orbit.dispose(); canvas.removeEventListener('keydown',keyboard); canvas.removeEventListener('webglcontextlost',contextLost); release(scene); renderer.dispose(); canvas.remove(); actions.current=null; };
-      const tick = (now:number) => { if(gone) return; raf=requestAnimationFrame(tick); const delta=Math.min((now-last)/1000,.05);last=now; if(!visible||document.hidden||lost) return; orbit.autoRotate=settings.current.auto;orbit.update(delta);if(settings.current.lighting===0){
+      const tick = (now:number) => { if(gone) return; raf=requestAnimationFrame(tick); const delta=Math.min((now-last)/1000,.05);last=now; if(!model||!visible||document.hidden||lost) return; orbit.autoRotate=settings.current.auto;orbit.update(delta);if(settings.current.lighting===0){
         // Keep the light on the viewer's side, including fast drags and auto orbit.
         exploreLight.set(-.8,.65,5).applyQuaternion(camera.quaternion).setLength(10).add(orbit.target);
         sun.position.copy(exploreLight);fill.intensity=.3;
@@ -99,7 +102,7 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
       renderer.render(scene,camera);  };
       raf=requestAnimationFrame(tick);
       try {
-        const gltf = await new GLTFLoader().loadAsync(`/models/${planetName}.glb`);
+        const gltf = await new GLTFLoader().loadAsync(`/models/${planetName}.glb`,e=>{if(!gone&&e.lengthComputable)setProgress(Math.min(95,e.loaded/e.total*95));});
         if(gone){release(gltf.scene);return;}
         model=gltf.scene;
         model.traverse(obj=>{if(obj instanceof T.Mesh){obj.castShadow=true;obj.receiveShadow=true;const mats=Array.isArray(obj.material)?obj.material:[obj.material];for(const mat of mats){mat.side=T.DoubleSide;if(mat.map)mat.map.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(obj.name==='Rings'){mat.transparent=true;mat.depthWrite=false;mat.shadowSide=T.DoubleSide;obj.customDepthMaterial=new T.MeshDepthMaterial({map:mat.map,alphaTest:.3,depthPacking:T.RGBADepthPacking,side:T.DoubleSide});}}}});
@@ -147,7 +150,8 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
           const atmosphere = new T.Mesh(planet.geometry.clone(), atmosphereMaterial);
           atmosphere.name='Atmosphere';atmosphere.scale.setScalar(isEarth ? 1.025 : planetName === 'mars' ? 1.003 : planetName === 'venus' ? 1.018 : 1.006);planet.add(atmosphere);
         }
-        scene.add(model);setStatus('ready');
+        scene.add(model);setPhase('กำลังจัดแสงและเตรียมภาพ');setProgress(95);
+        await renderer.compileAsync(scene,camera);if(gone)return;renderer.render(scene,camera);setProgress(100);setStatus('ready');
       }catch{if(!gone)setStatus('error');}
     }).catch(()=>{if(!gone)setStatus('error');});
     return()=>{gone=true;dispose();};
@@ -158,7 +162,8 @@ export default function SaturnExperience({ planetName = 'saturn' }: { planetName
     <header className="saturn-header"><a href="/" className="saturn-brand"><Orbit size={23}/><span>MILKY WAY <small>OBSERVATORY</small></span></a><a href="/" className="saturn-back"><ArrowLeft size={14}/> กลับสู่ทางช้างเผือก</a><nav className="planet-switch" aria-label="เลือกดาวเคราะห์">{Object.entries(planets).map(([key, planet])=><a key={key} href={`/?view=${key}`} aria-current={planetName===key?'page':undefined}>{planet.thai}</a>)}<span>{String(Object.keys(planets).length).padStart(2, '0')} / 08</span></nav></header>
     <div className="saturn-intro"><span className="saturn-kicker">{data.kicker}</span><h1>{title}<span>{thai}</span></h1><p>{data.description}</p><button onClick={()=>setInfo(!info)} className="saturn-learn" aria-expanded={info}><Info size={15}/> เรื่องราวของ{thai} <ArrowUpRight size={15}/></button></div>
     <div className="saturn-specimen"><span className="status-dot"/> SOL SYSTEM <span>/</span> {data.numeral}</div>
-    {status!=='ready'&&<div className="saturn-loading" role="status"><Orbit size={28}/><span>{status==='loading'?'กำลังเปิดโมเดลจาก Blender…':'ไม่สามารถเปิดฉาก WebGL ได้'}</span>{status==='error'&&<button onClick={()=>setRetry(retry+1)}>ลองอีกครั้ง</button>}</div>}
+    {status!=='ready'&&<SceneLoading key={retry} title={thai} progress={progress} phase={phase} error={status==='error'} onRetry={()=>setRetry(retry+1)}/>}
+
     {info&&<aside className="saturn-info"><button className="saturn-close" onClick={()=>setInfo(false)} aria-label="ปิดข้อมูล"><X size={18}/></button><span className="saturn-kicker">{data.infoKicker}</span><h2>{data.infoTitle}</h2><p>{data.story}</p><p>นี่คือโมเดลเพื่อศึกษางานภาพ พื้นผิวและแสงปรับเพื่อการนำเสนอ ไม่ใช่ภาพสดหรือสภาพอากาศในขณะนี้</p><a href={`https://science.nasa.gov/${planetName}/`} target="_blank" rel="noreferrer">สำรวจข้อมูลจาก NASA <ArrowUpRight size={14}/></a></aside>}
     <footer className="saturn-console"><div className="saturn-caption"><span>DRAG TO ORBIT</span><p>ลากหมุน · เลื่อนซูม · มือถือใช้สองนิ้ว</p></div><div className="saturn-lighting" aria-label="เลือกแสง">{(isEarth?['สำรวจรอบดวง','กลางคืน','แสงคงที่']:['สำรวจรอบดวง','ย้อนแสง','แสงคงที่']).map((label,i)=><button key={label} onClick={()=>setLighting(i)} aria-pressed={lighting===i}>{label}</button>)}</div><div className="saturn-actions"><button aria-label="ซูมเข้า" onClick={()=>actions.current?.zoom(.85)} disabled={status!=='ready'}><Plus size={17}/></button><button aria-label="ซูมออก" onClick={()=>actions.current?.zoom(1.18)} disabled={status!=='ready'}><Minus size={17}/></button><button aria-label="กลับมุมเริ่มต้น" onClick={()=>actions.current?.reset()} disabled={status!=='ready'}><RotateCcw size={16}/></button><button aria-label="หมุนอัตโนมัติ" aria-pressed={auto} onClick={()=>setAuto(!auto)} disabled={status!=='ready'}>{auto?<Pause size={16}/>:<Play size={16}/>}</button></div></footer>
     <span className="saturn-credit">ภาพจำลอง · {data.credit}: <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noreferrer">Solar System Scope</a> / <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a> · ปรับวัสดุและแสง</span>

@@ -1,3 +1,4 @@
+import SceneLoading from './scene-loading';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, Orbit, Plus, Minus, RotateCcw, Pause, Play } from 'lucide-react';
 import '../galaxy-hub.css';
@@ -10,6 +11,7 @@ export default function GalaxyHub(){
  const host=useRef<HTMLDivElement>(null),marker=useRef<HTMLButtonElement>(null),labels=useRef<(HTMLAnchorElement|null)[]>([]);
  const actions=useRef<{enter:()=>void;back:()=>void;reset:()=>void;zoom:(n:number)=>void}|null>(null);
  const [level,setLevel]=useState<Level>('solar'),[moving,setMoving]=useState(false),[status,setStatus]=useState('loading');
+ const [loadProgress,setLoadProgress]=useState(0);
  const [paused,setPaused]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
  const pausedRef=useRef(paused);pausedRef.current=paused;
  const interacting=useRef(false);
@@ -62,7 +64,7 @@ export default function GalaxyHub(){
      const anchor=new T.Group();anchor.position.set(Math.cos(a)*r,0,Math.sin(a)*r);Object.assign(anchor.userData,{id,radius:r,angle:a,speed:.055/(1+i*.3)});solar.add(anchor);spheres.push(anchor);
      const pts=Array.from({length:161},(_,n)=>new T.Vector3(Math.cos(n*Math.PI/80)*r,0,Math.sin(n*Math.PI/80)*r));
      solar.add(new T.Line(new T.BufferGeometry().setFromPoints(pts),new T.LineBasicMaterial({color:'#92a9c3',transparent:true,opacity:.085})));
-     queue.push(()=>new Promise<void>(done=>{const loadModel=(attempt=0)=>loader.load('/models/overview/'+id+'.glb'+(attempt?'?retry='+attempt:''),gltf=>{
+     queue.push(()=>new Promise<void>(done=>{const loadModel=(attempt=0)=>loader.load('/models/overview/'+id+'.glb'+(attempt?'?retry='+attempt:''),async gltf=>{
       const model=gltf.scene;if(gone){releaseModel(model);done();return;}
       const body=model.getObjectByName(id[0].toUpperCase()+id.slice(1)) as import('three').Mesh|undefined;
       if(!body?.geometry){releaseModel(model);setStatus('error');done();return;}
@@ -74,7 +76,7 @@ export default function GalaxyHub(){
         if(mat.transparent){mat.depthWrite=false;mat.side=T.DoubleSide;}
         Object.values(mat).forEach(value=>{if(value instanceof T.Texture)value.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());});
        });
-      });anchor.add(model);loadedModels++;if(loadedModels===planets.length)setStatus('ready');done();
+      });anchor.add(model);loadedModels++;setLoadProgress(loadedModels/planets.length*95);if(loadedModels===planets.length){try{await renderer.compileAsync(scene,camera);if(!gone){renderer.render(scene,camera);setLoadProgress(100);setStatus('ready');}}catch{if(!gone)setStatus('error');}}done();
      },undefined,error=>{if(gone){done();return;}if(attempt<2){loadModel(attempt+1);return;}console.warn('Planet model failed:',id,error);setStatus('error');done();});loadModel();}));
     });
     const work=async()=>{while(queue.length&&!gone)await queue.shift()!();};void work();void work();
@@ -107,7 +109,8 @@ export default function GalaxyHub(){
   <section className="journey-title"><span>{level==='galaxy'?'01 / THE MILKY WAY':'A JOURNEY THROUGH EIGHT WORLDS'}</span><h1>{level==='galaxy'?'ทางช้างเผือก':'ระบบสุริยะ'}</h1><p>{moving?'กำลังเดินทางสู่ระบบสุริยะ…':level==='galaxy'?'กาแลคซี่ของเรา และบ้านเล็ก ๆ ที่อยู่ข้างใน':'แปดโลก หนึ่งดวงอาทิตย์ และการเดินทางของคุณ'}</p>{level==='galaxy'?<button disabled={moving||status!=='ready'} onClick={()=>actions.current?.enter()}>ไปยังระบบสุริยะ <ArrowUpRight size={15}/></button>:<button onClick={()=>actions.current?.back()}><ArrowLeft size={15}/> กลับสู่ทางช้างเผือก</button>}</section>
   <button ref={marker} className="journey-marker" style={{visibility:'hidden'}} onClick={()=>actions.current?.enter()} disabled={moving} aria-label="เข้าสู่ระบบสุริยะ"><i/><span>เราอยู่ที่นี่<small>SOLAR SYSTEM ↗</small></span></button>
   {planets.map(([id,name],i)=><a ref={node=>{labels.current[i]=node;}} style={{visibility:'hidden'}} onPointerEnter={()=>{interacting.current=true;}} onPointerLeave={()=>{interacting.current=false;}} onFocus={()=>{interacting.current=true;}} onBlur={()=>{interacting.current=false;}} className="journey-label" key={id} href={`/?view=${id}`} tabIndex={level==='solar'?0:-1}>{name}<ArrowUpRight size={12}/></a>)}
-  {status!=='ready'&&<div className="journey-status" role="status">{status==='loading'?'กำลังโหลดดาวเคราะห์ 3 มิติ…':'โหลดฉากได้ไม่ครบ เลือกดาวจากรายการด้านล่างได้เลย'}</div>}
+  {status!=='ready'&&<SceneLoading title="ระบบสุริยะ" progress={loadProgress} phase={loadProgress>=95?'กำลังจัดแสงและเตรียมภาพ':'กำลังโหลดดาวเคราะห์ทั้ง 8 ดวง'} error={status==='error'} onRetry={()=>window.location.reload()}/>}
+
   {(level==='solar'||status==='error')&&<nav className="journey-destinations" aria-label="เลือกดาวเคราะห์">{planets.map(([id,name])=><a key={id} onPointerEnter={()=>{hovered.current=id;interacting.current=true;}} onPointerLeave={()=>{hovered.current=null;interacting.current=false;}} onFocus={()=>{hovered.current=id;interacting.current=true;}} onBlur={()=>{hovered.current=null;interacting.current=false;}} href={`/?view=${id}`}><img src={`/planets/${id}.png`} alt=""/><span>{name}</span></a>)}</nav>}
   <footer className="journey-footer"><div>ลากเพื่อหมุน · เลื่อนเพื่อซูม<small>ภาพจำลองเพื่อสำรวจ · ขนาด ระยะห่าง และความเร็วโคจรปรับเพื่อการนำเสนอ</small></div><div className="journey-controls">{level==='solar'&&<button disabled={status!=='ready'||moving} onClick={()=>setPaused(!paused)} aria-label={paused?'เริ่มการโคจร':'หยุดการโคจร'} aria-pressed={paused}>{paused?<Play size={17}/>:<Pause size={17}/>}</button>}<button disabled={status!=='ready'||moving} onClick={()=>actions.current?.zoom(.85)} aria-label="ซูมเข้า"><Plus size={18}/></button><button disabled={status!=='ready'||moving} onClick={()=>actions.current?.zoom(1.18)} aria-label="ซูมออก"><Minus size={18}/></button><button disabled={status!=='ready'||moving} onClick={()=>actions.current?.reset()} aria-label="รีเซ็ตมุมกล้อง"><RotateCcw size={17}/></button></div></footer>
  </main>;
