@@ -16,7 +16,7 @@ export default function GalaxyHub(){
  const hovered=useRef<string|null>(null);
  useEffect(()=>{
   let gone=false,dispose=()=>{};
-  Promise.all([import('three'),import('three/addons/controls/OrbitControls.js')]).then(([T,{OrbitControls}])=>{
+  Promise.all([import('three'),import('three/addons/controls/OrbitControls.js'),import('three/addons/loaders/GLTFLoader.js')]).then(([T,{OrbitControls},{GLTFLoader}])=>{
    if(gone||!host.current)return;
    const el=host.current,renderer=new T.WebGLRenderer({antialias:true,alpha:false});
    renderer.setClearColor('#02040a');renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));el.appendChild(renderer.domElement);
@@ -54,24 +54,28 @@ export default function GalaxyHub(){
    const sun=new T.Mesh(new T.SphereGeometry(1.0,64,48),sunMaterial);solar.add(sun);
    const glowCanvas=document.createElement('canvas');glowCanvas.width=256;glowCanvas.height=256;const ctx=glowCanvas.getContext('2d')!;const glowGradient=ctx.createRadialGradient(128,128,10,128,128,128);glowGradient.addColorStop(0,'rgba(255,225,148,1)');glowGradient.addColorStop(.2,'rgba(255,160,55,.7)');glowGradient.addColorStop(.45,'rgba(238,86,12,.13)');glowGradient.addColorStop(1,'rgba(180,50,8,0)');ctx.fillStyle=glowGradient;ctx.fillRect(0,0,256,256);const glowMap=new T.CanvasTexture(glowCanvas);textures.push(glowMap);const corona=new T.Sprite(new T.SpriteMaterial({map:glowMap,color:'#ffd4a2',transparent:true,blending:T.AdditiveBlending,depthWrite:false}));corona.scale.set(9,9,1);solar.add(corona);
    const light=new T.DirectionalLight('#e6efff',2.3);const sunlight=new T.PointLight('#ffd4a3',18,0,1);solar.add(sunlight);scene.add(light,new T.AmbientLight('#b9c9df',.18));
-   const spheres:import('three').Mesh[]=[];let solarLoaded=false;
-   function loadSolar(){if(solarLoaded)return;solarLoaded=true;const loader=new T.TextureLoader();
+   const spheres:import('three').Group[]=[];let solarLoaded=false,loadedModels=0;
+   const releaseModel=(root:import('three').Object3D)=>root.traverse(o=>{const m=o as import('three').Mesh;m.geometry?.dispose();if(m.material)(Array.isArray(m.material)?m.material:[m.material]).forEach(mat=>{Object.values(mat).forEach(value=>{if(value instanceof T.Texture)value.dispose();});mat.dispose();});});
+   function loadSolar(){if(solarLoaded)return;solarLoaded=true;const loader=new GLTFLoader();
     planets.forEach(([id,,size],i)=>{
-     const r=2.0+i*1.32,a=[2.7,.9,4.1,5.5,2.95,.55,4.25,5.8][i];
-     const material=new T.MeshStandardMaterial({color:'#b7c2cc',roughness:1});
-     const mesh=new T.Mesh(new T.SphereGeometry(size*1.65,64,40),material);mesh.position.set(Math.cos(a)*r,0,Math.sin(a)*r);mesh.userData.id=id;mesh.userData.radius=r;mesh.userData.angle=a;mesh.userData.speed=.055/(1+i*.3);solar.add(mesh);spheres.push(mesh);
-     loader.load(`/planet-maps/${id}.jpg`,tex=>{if(gone){tex.dispose();return;}tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());textures.push(tex);material.map=tex;material.color.set('white');material.needsUpdate=true;});
+     const r=2+i*1.32,a=[2.7,.9,4.1,5.5,2.95,.55,4.25,5.8][i];
+     const anchor=new T.Group();anchor.position.set(Math.cos(a)*r,0,Math.sin(a)*r);Object.assign(anchor.userData,{id,radius:r,angle:a,speed:.055/(1+i*.3)});solar.add(anchor);spheres.push(anchor);
      const pts=Array.from({length:161},(_,n)=>new T.Vector3(Math.cos(n*Math.PI/80)*r,0,Math.sin(n*Math.PI/80)*r));
      solar.add(new T.Line(new T.BufferGeometry().setFromPoints(pts),new T.LineBasicMaterial({color:'#92a9c3',transparent:true,opacity:.085})));
-     if(id==='saturn'||id==='uranus'){
-      const inner=size*1.65*1.25,outer=size*1.65*(id==='saturn'?2.15:1.7),geo=new T.RingGeometry(inner,outer,128);
-      const ringMat=new T.MeshStandardMaterial({color:id==='saturn'?'#c9baa0':'#84979b',side:T.DoubleSide,transparent:true,opacity:id==='saturn'?.9:.25,depthWrite:false,roughness:1});
-      if(id==='saturn'){const uv=geo.attributes.uv,pos=geo.attributes.position;for(let k=0;k<pos.count;k++)uv.setXY(k,(Math.hypot(pos.getX(k),pos.getY(k))-inner)/(outer-inner),.5);loader.load('/planet-maps/saturn-ring.png',tex=>{if(gone){tex.dispose();return;}tex.colorSpace=T.SRGBColorSpace;textures.push(tex);ringMat.map=tex;ringMat.needsUpdate=true;});}
-      const ring=new T.Mesh(geo,ringMat);ring.rotation.x=id==='saturn'?Math.PI/2+.38:.25;mesh.add(ring);
-     }
-     if(['earth','venus','uranus','neptune'].includes(id)){
-      const rimMat=new T.ShaderMaterial({uniforms:{tint:{value:new T.Color(id==='venus'?'#e6c898':'#71bfe5')}},vertexShader:'varying vec3 n;varying vec3 v;void main(){vec4 p=modelViewMatrix*vec4(position,1.);n=normalize(normalMatrix*normal);v=normalize(-p.xyz);gl_Position=projectionMatrix*p;}',fragmentShader:'uniform vec3 tint;varying vec3 n;varying vec3 v;void main(){float edge=pow(1.-max(dot(normalize(n),normalize(v)),0.),4.);gl_FragColor=vec4(tint,edge*.32);}',transparent:true,blending:T.AdditiveBlending,depthWrite:false});const rim=new T.Mesh(mesh.geometry.clone(),rimMat);rim.scale.setScalar(1.025);mesh.add(rim);
-     }
+     loader.load('/models/overview/'+id+'.glb',gltf=>{
+      const model=gltf.scene;if(gone){releaseModel(model);return;}
+      const body=model.getObjectByName(id[0].toUpperCase()+id.slice(1)) as import('three').Mesh|undefined;
+      if(!body?.geometry){releaseModel(model);setStatus('error');return;}
+      body.geometry.computeBoundingSphere();model.scale.setScalar(size*1.65/(body.geometry.boundingSphere?.radius||1));
+      model.traverse(o=>{o.userData.id=id;const mesh=o as import('three').Mesh;if(!mesh.material)return;
+       (Array.isArray(mesh.material)?mesh.material:[mesh.material]).forEach(material=>{
+        const mat=material as import('three').MeshStandardMaterial;
+        if(mat.emissiveMap)mat.emissiveIntensity=.12;
+        if(mat.transparent){mat.depthWrite=false;mat.side=T.DoubleSide;}
+        Object.values(mat).forEach(value=>{if(value instanceof T.Texture)value.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());});
+       });
+      });anchor.add(model);loadedModels++;if(loadedModels===planets.length)setStatus('ready');
+     },undefined,()=>{if(!gone)setStatus('error');});
     });
    }
    loadSolar();
@@ -81,8 +85,8 @@ export default function GalaxyHub(){
    const resize=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();};const ro=new ResizeObserver(resize);ro.observe(el);resize();
    const ray=new T.Raycaster(),pointer=new T.Vector2();let downX=0,downY=0;
    const down=(e:PointerEvent)=>{interacting.current=true;downX=e.clientX;downY=e.clientY;};
-   const up=(e:PointerEvent)=>{interacting.current=false;if(flight||Math.hypot(e.clientX-downX,e.clientY-downY)>6)return;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);if(current==='solar'){const hit=ray.intersectObjects(spheres,false)[0];if(hit)window.location.href=`/?view=${hit.object.userData.id}`;}else if(ray.intersectObject(beacon).length)actions.current?.enter();};
-   const hover=(e:PointerEvent)=>{if(current!=='solar'||e.buttons)return;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObjects(spheres,false)[0];hovered.current=hit?hit.object.userData.id:null;renderer.domElement.style.cursor=hit?'pointer':'grab';};
+   const up=(e:PointerEvent)=>{interacting.current=false;if(flight||Math.hypot(e.clientX-downX,e.clientY-downY)>6)return;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);if(current==='solar'){const hit=ray.intersectObjects(spheres,true)[0];if(hit)window.location.href=`/?view=${hit.object.userData.id}`;}else if(ray.intersectObject(beacon).length)actions.current?.enter();};
+   const hover=(e:PointerEvent)=>{if(current!=='solar'||e.buttons)return;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObjects(spheres,true)[0];hovered.current=hit?hit.object.userData.id:null;renderer.domElement.style.cursor=hit?'pointer':'grab';};
    const leave=()=>{hovered.current=null;};renderer.domElement.addEventListener('pointermove',hover);renderer.domElement.addEventListener('pointerleave',leave);
    const release=()=>{interacting.current=false;};window.addEventListener('pointerup',release);window.addEventListener('pointercancel',release);window.addEventListener('blur',release);
    renderer.domElement.addEventListener('pointerdown',down);renderer.domElement.addEventListener('pointerup',up);
@@ -93,8 +97,8 @@ export default function GalaxyHub(){
     if(current==='solar'&&!flight&&!pausedRef.current&&!interacting.current){spheres.forEach(sphere=>{sphere.userData.angle=(sphere.userData.angle+delta*sphere.userData.speed)%(Math.PI*2);const a=sphere.userData.angle,r=sphere.userData.radius;sphere.position.set(Math.cos(a)*r,0,Math.sin(a)*r);});}
     if(flight){const t=reduced?1:Math.min((now-start)/1500,1),ease=t*t*(3-2*t);camera.position.lerpVectors(fromCamera,origin.clone().add(new T.Vector3(0,1.2,2.5)),ease);controls.target.lerpVectors(fromTarget,origin,ease);if(t===1){flight=0;current='solar';galaxy.visible=false;solar.visible=true;setLevel('solar');setMoving(false);controls.enabled=true;home();}}
     controls.update();light.position.copy(camera.position);camera.updateMatrixWorld();place(marker.current,origin,current==='galaxy'&&!flight);spheres.forEach((sphere,i)=>place(labels.current[i],sphere.position,current==='solar'&&hovered.current===sphere.userData.id));sunMaterial.uniforms.time.value=now/1000;renderer.render(scene,camera);
-   };frame=requestAnimationFrame(tick);setStatus('ready');
-   dispose=()=>{window.removeEventListener('pointerup',release);window.removeEventListener('pointercancel',release);window.removeEventListener('blur',release);cancelAnimationFrame(frame);renderer.domElement.removeEventListener('pointermove',hover);renderer.domElement.removeEventListener('pointerleave',leave);ro.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',down);renderer.domElement.removeEventListener('pointerup',up);renderer.domElement.removeEventListener('webglcontextlost',lost);scene.traverse(o=>{const m=o as import('three').Mesh;m.geometry?.dispose();if(m.material)(Array.isArray(m.material)?m.material:[m.material]).forEach(mat=>mat.dispose());});textures.forEach(t=>t.dispose());renderer.dispose();renderer.domElement.remove();actions.current=null;};
+   };frame=requestAnimationFrame(tick);
+   dispose=()=>{window.removeEventListener('pointerup',release);window.removeEventListener('pointercancel',release);window.removeEventListener('blur',release);cancelAnimationFrame(frame);renderer.domElement.removeEventListener('pointermove',hover);renderer.domElement.removeEventListener('pointerleave',leave);ro.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',down);renderer.domElement.removeEventListener('pointerup',up);renderer.domElement.removeEventListener('webglcontextlost',lost);releaseModel(scene);textures.forEach(t=>t.dispose());renderer.dispose();renderer.domElement.remove();actions.current=null;};
   }).catch(()=>{if(!gone)setStatus('error');});return()=>{gone=true;dispose();};
  },[]);
  return <main className="journey"><div ref={host} className="journey-stage"/>
@@ -102,7 +106,7 @@ export default function GalaxyHub(){
   <section className="journey-title"><span>{level==='galaxy'?'01 / THE MILKY WAY':'A JOURNEY THROUGH EIGHT WORLDS'}</span><h1>{level==='galaxy'?'ทางช้างเผือก':'ระบบสุริยะ'}</h1><p>{moving?'กำลังเดินทางสู่ระบบสุริยะ…':level==='galaxy'?'กาแลคซี่ของเรา และบ้านเล็ก ๆ ที่อยู่ข้างใน':'แปดโลก หนึ่งดวงอาทิตย์ และการเดินทางของคุณ'}</p>{level==='galaxy'?<button disabled={moving||status!=='ready'} onClick={()=>actions.current?.enter()}>ไปยังระบบสุริยะ <ArrowUpRight size={15}/></button>:<button onClick={()=>actions.current?.back()}><ArrowLeft size={15}/> กลับสู่ทางช้างเผือก</button>}</section>
   <button ref={marker} className="journey-marker" style={{visibility:'hidden'}} onClick={()=>actions.current?.enter()} disabled={moving} aria-label="เข้าสู่ระบบสุริยะ"><i/><span>เราอยู่ที่นี่<small>SOLAR SYSTEM ↗</small></span></button>
   {planets.map(([id,name],i)=><a ref={node=>{labels.current[i]=node;}} style={{visibility:'hidden'}} onPointerEnter={()=>{interacting.current=true;}} onPointerLeave={()=>{interacting.current=false;}} onFocus={()=>{interacting.current=true;}} onBlur={()=>{interacting.current=false;}} className="journey-label" key={id} href={`/?view=${id}`} tabIndex={level==='solar'?0:-1}>{name}<ArrowUpRight size={12}/></a>)}
-  {status!=='ready'&&<div className="journey-status" role="status">{status==='loading'?'กำลังเปิดทางช้างเผือก…':'ฉาก WebGL เปิดไม่ได้ เลือกดาวจากรายการด้านล่างได้เลย'}</div>}
+  {status!=='ready'&&<div className="journey-status" role="status">{status==='loading'?'กำลังโหลดดาวเคราะห์ 3 มิติ…':'โหลดฉากได้ไม่ครบ เลือกดาวจากรายการด้านล่างได้เลย'}</div>}
   {(level==='solar'||status==='error')&&<nav className="journey-destinations" aria-label="เลือกดาวเคราะห์">{planets.map(([id,name])=><a key={id} onPointerEnter={()=>{hovered.current=id;interacting.current=true;}} onPointerLeave={()=>{hovered.current=null;interacting.current=false;}} onFocus={()=>{hovered.current=id;interacting.current=true;}} onBlur={()=>{hovered.current=null;interacting.current=false;}} href={`/?view=${id}`}><img src={`/planets/${id}.png`} alt=""/><span>{name}</span></a>)}</nav>}
   <footer className="journey-footer"><div>ลากเพื่อหมุน · เลื่อนเพื่อซูม<small>ภาพจำลองเพื่อสำรวจ · ขนาด ระยะห่าง และความเร็วโคจรปรับเพื่อการนำเสนอ</small></div><div className="journey-controls">{level==='solar'&&<button disabled={status!=='ready'||moving} onClick={()=>setPaused(!paused)} aria-label={paused?'เริ่มการโคจร':'หยุดการโคจร'} aria-pressed={paused}>{paused?<Play size={17}/>:<Pause size={17}/>}</button>}<button disabled={status!=='ready'||moving} onClick={()=>actions.current?.zoom(.85)} aria-label="ซูมเข้า"><Plus size={18}/></button><button disabled={status!=='ready'||moving} onClick={()=>actions.current?.zoom(1.18)} aria-label="ซูมออก"><Minus size={18}/></button><button disabled={status!=='ready'||moving} onClick={()=>actions.current?.reset()} aria-label="รีเซ็ตมุมกล้อง"><RotateCcw size={17}/></button></div></footer>
  </main>;
