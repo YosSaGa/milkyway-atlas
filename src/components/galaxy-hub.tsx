@@ -67,7 +67,7 @@ export default function GalaxyHub(){
       const inner=size*1.65*1.25,outer=size*1.65*(id==='saturn'?2.15:1.7),geo=new T.RingGeometry(inner,outer,128);
       const ringMat=new T.MeshStandardMaterial({color:id==='saturn'?'#c9baa0':'#84979b',side:T.DoubleSide,transparent:true,opacity:id==='saturn'?.9:.25,depthWrite:false,roughness:1});
       if(id==='saturn'){const uv=geo.attributes.uv,pos=geo.attributes.position;for(let k=0;k<pos.count;k++)uv.setXY(k,(Math.hypot(pos.getX(k),pos.getY(k))-inner)/(outer-inner),.5);loader.load('/planet-maps/saturn-ring.png',tex=>{if(gone){tex.dispose();return;}tex.colorSpace=T.SRGBColorSpace;textures.push(tex);ringMat.map=tex;ringMat.needsUpdate=true;});}
-      const ring=new T.Mesh(geo,ringMat);ring.rotation.x=id==='saturn'?Math.PI/2-.42:.25;mesh.add(ring);
+      const ring=new T.Mesh(geo,ringMat);ring.rotation.x=id==='saturn'?Math.PI/2+.38:.25;mesh.add(ring);
      }
      if(['earth','venus','uranus','neptune'].includes(id)){
       const rimMat=new T.ShaderMaterial({uniforms:{tint:{value:new T.Color(id==='venus'?'#e6c898':'#71bfe5')}},vertexShader:'varying vec3 n;varying vec3 v;void main(){vec4 p=modelViewMatrix*vec4(position,1.);n=normalize(normalMatrix*normal);v=normalize(-p.xyz);gl_Position=projectionMatrix*p;}',fragmentShader:'uniform vec3 tint;varying vec3 n;varying vec3 v;void main(){float edge=pow(1.-max(dot(normalize(n),normalize(v)),0.),4.);gl_FragColor=vec4(tint,edge*.32);}',transparent:true,blending:T.AdditiveBlending,depthWrite:false});const rim=new T.Mesh(mesh.geometry.clone(),rimMat);rim.scale.setScalar(1.025);mesh.add(rim);
