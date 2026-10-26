@@ -56,16 +56,16 @@ export default function GalaxyHub(){
    const light=new T.DirectionalLight('#e6efff',2.3);const sunlight=new T.PointLight('#ffd4a3',18,0,1);solar.add(sunlight);scene.add(light,new T.AmbientLight('#b9c9df',.18));
    const spheres:import('three').Group[]=[];let solarLoaded=false,loadedModels=0;
    const releaseModel=(root:import('three').Object3D)=>root.traverse(o=>{const m=o as import('three').Mesh;m.geometry?.dispose();if(m.material)(Array.isArray(m.material)?m.material:[m.material]).forEach(mat=>{Object.values(mat).forEach(value=>{if(value instanceof T.Texture)value.dispose();});mat.dispose();});});
-   function loadSolar(){if(solarLoaded)return;solarLoaded=true;const loader=new GLTFLoader();
+   function loadSolar(){if(solarLoaded)return;solarLoaded=true;const loader=new GLTFLoader(),queue:(()=>Promise<void>)[]=[];
     planets.forEach(([id,,size],i)=>{
      const r=2+i*1.32,a=[2.7,.9,4.1,5.5,2.95,.55,4.25,5.8][i];
      const anchor=new T.Group();anchor.position.set(Math.cos(a)*r,0,Math.sin(a)*r);Object.assign(anchor.userData,{id,radius:r,angle:a,speed:.055/(1+i*.3)});solar.add(anchor);spheres.push(anchor);
      const pts=Array.from({length:161},(_,n)=>new T.Vector3(Math.cos(n*Math.PI/80)*r,0,Math.sin(n*Math.PI/80)*r));
      solar.add(new T.Line(new T.BufferGeometry().setFromPoints(pts),new T.LineBasicMaterial({color:'#92a9c3',transparent:true,opacity:.085})));
-     const loadModel=(attempt=0)=>loader.load('/models/overview/'+id+'.glb'+(attempt?'?retry='+attempt:''),gltf=>{
-      const model=gltf.scene;if(gone){releaseModel(model);return;}
+     queue.push(()=>new Promise<void>(done=>{const loadModel=(attempt=0)=>loader.load('/models/overview/'+id+'.glb'+(attempt?'?retry='+attempt:''),gltf=>{
+      const model=gltf.scene;if(gone){releaseModel(model);done();return;}
       const body=model.getObjectByName(id[0].toUpperCase()+id.slice(1)) as import('three').Mesh|undefined;
-      if(!body?.geometry){releaseModel(model);setStatus('error');return;}
+      if(!body?.geometry){releaseModel(model);setStatus('error');done();return;}
       body.geometry.computeBoundingSphere();model.scale.setScalar(size*1.65/(body.geometry.boundingSphere?.radius||1));
       model.traverse(o=>{o.userData.id=id;const mesh=o as import('three').Mesh;if(!mesh.material)return;
        (Array.isArray(mesh.material)?mesh.material:[mesh.material]).forEach(material=>{
@@ -74,9 +74,10 @@ export default function GalaxyHub(){
         if(mat.transparent){mat.depthWrite=false;mat.side=T.DoubleSide;}
         Object.values(mat).forEach(value=>{if(value instanceof T.Texture)value.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());});
        });
-      });anchor.add(model);loadedModels++;if(loadedModels===planets.length)setStatus('ready');
-     },undefined,error=>{if(gone)return;if(attempt<2){loadModel(attempt+1);return;}console.warn('Planet model failed:',id,error);setStatus('error');});loadModel();
+      });anchor.add(model);loadedModels++;if(loadedModels===planets.length)setStatus('ready');done();
+     },undefined,error=>{if(gone){done();return;}if(attempt<2){loadModel(attempt+1);return;}console.warn('Planet model failed:',id,error);setStatus('error');done();});loadModel();}));
     });
+    const work=async()=>{while(queue.length&&!gone)await queue.shift()!();};void work();void work();
    }
    loadSolar();
    let current:Level='solar',flight=0,start=0,frame=0,last=performance.now();const fromCamera=new T.Vector3(),fromTarget=new T.Vector3();
